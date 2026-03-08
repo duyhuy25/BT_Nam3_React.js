@@ -11,7 +11,7 @@ const Header = () => {
           className="logo"
         />
 
-        <h1>Hệ thống Quản lý Logistics</h1>
+        <h2>Hệ thống Quản lý Logistics</h2>
       </div>
 
       <div className="banner-right">
