@@ -32,11 +32,12 @@ const Sidebar = ({ onSelect }: Props) => {
 
           {openMenu==="container" && (
             <ul className="sub-menu">
-
               <li onClick={()=>onSelect("containers")}>
                 Danh sách Container
               </li>
-
+              <li onClick={()=>onSelect("containerhistory")}>
+                Lịch sử Container
+              </li>
             </ul>
           )}
 

@@ -4,19 +4,25 @@ import Sidebar from "./component/sidebar";
 import Footer from "./component/footer";
 
 import Containers from "./pages/Containers";
+import ContainerHistory from "./pages/Containerhistory";
 
 import "./App.css";
 
 function App() {
 
-  const [module, setModule] = useState("containers");
+  const [module, setModule] = useState<string>("containers");
 
   const renderModule = () => {
     switch (module) {
+
       case "containers":
         return <Containers />;
+
+      case "containerhistory":
+        return <ContainerHistory />;
+
       default:
-        return <h2>Chọn module bên trái</h2>;
+        return <h2>Chưa có dữ liệu</h2>;
     }
   };
 
@@ -25,11 +31,15 @@ function App() {
       <Header />
 
       <div className="container">
+
+        {/* Sidebar */}
         <Sidebar onSelect={setModule} />
 
+        {/* Main content */}
         <div className="main-content">
           {renderModule()}
         </div>
+
       </div>
 
       <Footer />
