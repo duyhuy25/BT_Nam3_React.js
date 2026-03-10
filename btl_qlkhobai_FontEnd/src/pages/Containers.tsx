@@ -27,6 +27,9 @@ const Containers = () => {
             <td>Điện tử</td>
             <td>500kg</td>
             <td>Trong kho</td>
+            <td>Kho Bắc Ninh</td>
+            <td>89H7789</td>
+            <td>Tiền Tỷ</td>
           </tr>
         </tbody>
 
