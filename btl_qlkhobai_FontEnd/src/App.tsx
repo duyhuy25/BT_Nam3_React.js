@@ -32,10 +32,8 @@ function App() {
 
       <div className="container">
 
-        {/* Sidebar */}
         <Sidebar onSelect={setModule} />
 
-        {/* Main content */}
         <div className="main-content">
           {renderModule()}
         </div>

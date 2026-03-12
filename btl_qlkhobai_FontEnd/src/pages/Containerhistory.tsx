@@ -14,7 +14,7 @@ const ContainerHistory = () => {
 
   useEffect(() => {
 
-    fetch("http://localhost:5000/api/containerhistory")
+    fetch("http://localhost:5000/api/history/containerhistory")
       .then(res => res.json())
       .then(data => setHistory(data));
 
