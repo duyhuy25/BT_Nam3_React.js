@@ -5,6 +5,8 @@ import Footer from "./component/footer";
 
 import Containers from "./pages/Containers";
 import ContainerHistory from "./pages/Containerhistory";
+import ItemTypes from "./pages/ItemTypes";
+import Warehouses from "./pages/Warehouses";
 
 import "./App.css";
 
@@ -20,6 +22,12 @@ function App() {
 
       case "containerhistory":
         return <ContainerHistory />;
+
+      case "itemtypes":
+          return <ItemTypes />;
+
+      case "warehouses":
+          return <Warehouses />;
 
       default:
         return <h2>Chưa có dữ liệu</h2>;

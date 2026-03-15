@@ -15,6 +15,7 @@ interface Container {
 const Containers = () => {
 
   const [containers, setContainers] = useState<Container[]>([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
 
@@ -28,9 +29,23 @@ const Containers = () => {
   return (
 
     <div>
-
+      <div className="header">
       <h2>📦 Danh sách Container</h2>
+        <div className="toolbar">
 
+            <input
+              type="text"
+              placeholder="🔍 Tìm container..."
+              className="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <button className="btn-add">
+              + Thêm lịch sử
+            </button>
+          </div>
+        </div>
       <table>
 
         <thead>
@@ -71,6 +86,7 @@ const Containers = () => {
         </tbody>
 
       </table>
+      /
 
     </div>
 

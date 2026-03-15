@@ -38,6 +38,9 @@ const Sidebar = ({ onSelect }: Props) => {
               <li onClick={()=>onSelect("containerhistory")}>
                 Lịch sử Container
               </li>
+              <li onClick={()=>onSelect("itemtypes")}>
+                Loại hàng
+              </li>
             </ul>
           )}
 

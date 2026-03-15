@@ -26,7 +26,6 @@ const ContainerHistory = () => {
 
   return (
     <div>
-
       <div className="header">
         <h2>📜 Lịch sử Container</h2>
 
@@ -34,7 +33,7 @@ const ContainerHistory = () => {
 
           <input
             type="text"
-            placeholder="🔍 Tìm container..."
+            placeholder="🔍 Tìm lịch container..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
