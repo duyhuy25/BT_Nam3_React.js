@@ -9,6 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/history", containerHistoryRoute);
-app.use("")
+app.use("/api/container", container)
 
 export default app;
