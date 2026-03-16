@@ -66,7 +66,61 @@ const Sidebar = ({ onSelect }: Props) => {
           )}
 
         </li>
+        <li>
 
+          <div
+            className="menu-toggle"
+            onClick={()=>toggleMenu("transport")}
+          >
+            🚚 Quản lý Vận chuyển
+          </div>
+
+          {openMenu==="transport" && (
+
+            <ul className="sub-menu">
+
+              <li onClick={()=>onSelect("vehicles")}>
+                Phương tiện
+              </li>
+
+              <li onClick={()=>onSelect("trips")}>
+                Chuyến đi
+              </li>
+
+              <li onClick={()=>onSelect("ports")}>
+                Cảng
+              </li>
+
+            </ul>
+
+          )}
+        </li>
+        <li>
+
+          <div
+            className="menu-toggle"
+            onClick={()=>toggleMenu("customer")}
+          >
+            👥 Quản lý Khách hàng
+          </div>
+
+          {openMenu==="customers" && (
+
+            <ul className="sub-menu">
+
+              <li onClick={()=>onSelect("customers")}>
+                Khách hàng
+              </li>
+
+              <li onClick={()=>onSelect("contracts")}>
+                Hợp đồng
+              </li>
+
+            </ul>
+
+          )}
+
+        </li>
       </ul>
 
     </div>
