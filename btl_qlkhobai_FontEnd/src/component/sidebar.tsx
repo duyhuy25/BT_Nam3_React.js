@@ -83,10 +83,10 @@ const Sidebar = ({ onSelect }: Props) => {
           <div
             className="menu-toggle"
             onClick={()=>toggleMenu("customer")}
-          >
+            >
             👥 Quản lý Khách hàng
           </div>
-          {openMenu==="customers" && (
+          {openMenu==="customer" && (
             <ul className="sub-menu">
               <li onClick={()=>onSelect("customers")}>
                 Khách hàng
@@ -98,7 +98,6 @@ const Sidebar = ({ onSelect }: Props) => {
           )}
         </li>
         <li>
-
           <div
             className="menu-toggle"
             onClick={()=>toggleMenu("finance")}

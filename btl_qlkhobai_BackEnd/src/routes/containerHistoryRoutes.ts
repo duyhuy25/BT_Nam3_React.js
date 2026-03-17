@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { getContainerHistory } from "../controllers/containerHistoryController";
+import { getContainerHistorys } from "../controllers/containerHistoryController";
 
 const router = Router();
 
-router.get("/containerhistory", getContainerHistory);
+router.get("/containerhistory", getContainerHistorys);
 
 export default router;

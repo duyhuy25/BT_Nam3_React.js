@@ -3,9 +3,9 @@ import "./Pages.css";
 
 interface ItemType {
   LoaiHangID: number;
-  TenLoaiHang: string;
-  MoTa: string;
+  TenLoai: string;
   DanhMuc: string;
+  MoTa: string;
 }
 
 const ItemTypes = () => {
@@ -14,13 +14,13 @@ const ItemTypes = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/itemtypes")
+    fetch("http://localhost:5000/api/itemtype/itemtype")
       .then(res => res.json())
       .then(data => setTypes(data));
   }, []);
 
   const filtered = types.filter(t =>
-    t.TenLoaiHang.toLowerCase().includes(search.toLowerCase())
+    t.TenLoai.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -48,8 +48,8 @@ const ItemTypes = () => {
           <tr>
             <th>ID</th>
             <th>Tên loại hàng</th>
-            <th>Mô tả</th>
             <th>Danh mục</th>
+            <th>Mô tả</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -60,9 +60,9 @@ const ItemTypes = () => {
 
             <tr key={t.LoaiHangID}>
               <td>{t.LoaiHangID}</td>
-              <td>{t.TenLoaiHang}</td>
-              <td>{t.MoTa}</td>
+              <td>{t.TenLoai}</td>
               <td>{t.DanhMuc}</td>
+              <td>{t.MoTa}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

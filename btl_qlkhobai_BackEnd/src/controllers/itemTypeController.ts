@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { fetchHistory } from "../services/containerHistoryService";
+import { fetchItemType } from "../services/itemtypeServices";
 
-export const getContainerHistorys = async (req: Request, res: Response) => {
+export const getItemtypes = async (req: Request, res: Response) => {
 
   try {
 
-    const data = await fetchHistory();
+    const data = await fetchItemType();
 
     res.json(data);
 
