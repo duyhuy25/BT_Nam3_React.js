@@ -9,6 +9,7 @@ import ItemTypes from "./pages/ItemTypes";
 import Warehouses from "./pages/Warehouses";
 
 import "./App.css";
+import Vehicles from "./pages/Vehicles";
 
 function App() {
 
@@ -28,6 +29,8 @@ function App() {
 
       case "warehouses":
           return <Warehouses />;
+      case "vehicles":
+          return <Vehicles />;
 
       default:
         return <h2>Chưa có dữ liệu</h2>;

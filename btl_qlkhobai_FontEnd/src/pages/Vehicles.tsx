@@ -3,10 +3,12 @@ import "./Pages.css";
 
 interface Vehicle {
   PhuongTienID: number;
-  LoaiXe: string;
+  LoaiPhuongTien: string;
   BienSo: string;
+  HinhAnh: string;
   TaiTrong: number;
   TrangThai: string;
+  MoTa: string;
 }
 
 const Vehicles = () => {
@@ -15,7 +17,7 @@ const Vehicles = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/vehicles")
+    fetch("http://localhost:5000/api/vehicle/vehicle")
       .then(res => res.json())
       .then(data => setVehicles(data));
   }, []);
@@ -54,8 +56,10 @@ const Vehicles = () => {
             <th>ID</th>
             <th>Loại xe</th>
             <th>Biển số</th>
+            <th>Hình ảnh</th>
             <th>Tải trọng</th>
             <th>Trạng thái</th>
+            <th>Mô tả</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -66,10 +70,12 @@ const Vehicles = () => {
 
             <tr key={v.PhuongTienID}>
               <td>{v.PhuongTienID}</td>
-              <td>{v.LoaiXe}</td>
+              <td>{v.LoaiPhuongTien}</td>
               <td>{v.BienSo}</td>
+              <td>{v.HinhAnh}</td>
               <td>{v.TaiTrong}</td>
               <td>{v.TrangThai}</td>
+              <td>{v.MoTa}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>
