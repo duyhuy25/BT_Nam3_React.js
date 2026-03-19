@@ -9,6 +9,8 @@ import trip from "./routes/tripsRoutes"
 import port from "./routes/portRoutes"
 import customer from "./routes/customerRoutes"
 import contract from "./routes/contractRoutes"
+import cost from "./routes/costRoutes"
+import invoice from "./routes/invoiceRoutes"
 
 const app = express();
 
@@ -24,5 +26,7 @@ app.use("/api/trip", trip);
 app.use("/api/port", port);
 app.use("/api/customer", customer);
 app.use("/api/contract", contract);
+app.use("/api/cost", cost);
+app.use("/api/invoice", invoice);
 
 export default app;

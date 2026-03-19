@@ -3,9 +3,11 @@ import "./Pages.css"
 
 interface Cost{
   ChiPhiID:number
-  HopDong:string
+  HopDongID:number
+  ContainerID: number
   LoaiChiPhi:string
   SoTien:number
+  ThuKhachHang: string  
 }
 
 const Costs = () =>{
@@ -15,7 +17,7 @@ const Costs = () =>{
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/costs")
+    fetch("http://localhost:5000/api/cost/cost")
     .then(res=>res.json())
     .then(data=>setCosts(data))
 
@@ -56,12 +58,13 @@ const Costs = () =>{
           <tr>
             <th>ID</th>
             <th>Hợp đồng</th>
+            <th>Container</th>
             <th>Loại chi phí</th>
             <th>Số tiền</th>
+            <th>Thu Khách Hàng</th>
             <th>Tác vụ</th>
           </tr>
-        </thead>
-
+        </thead> 
         <tbody>
 
           {filtered.map(c =>(
@@ -69,9 +72,11 @@ const Costs = () =>{
             <tr key={c.ChiPhiID}>
 
               <td>{c.ChiPhiID}</td>
-              <td>{c.HopDong}</td>
+              <td>{c.HopDongID}</td>
+              <td>{c.ContainerID}</td>
               <td>{c.LoaiChiPhi}</td>
               <td>{c.SoTien.toLocaleString()}</td>
+              <td>{c.ThuKhachHang}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

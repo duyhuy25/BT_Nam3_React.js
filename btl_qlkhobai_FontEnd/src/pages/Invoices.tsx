@@ -3,10 +3,10 @@ import "./Pages.css"
 
 interface Invoice{
   HoaDonID:number
-  HopDong:string
+  HopDongID:number
   SoTien:number
-  NgayPhatHanh:string
-  TrangThai:string
+  NgayLap:string
+  PhanTramDaThanhToan:string
 }
 
 const Invoices = () =>{
@@ -16,16 +16,15 @@ const Invoices = () =>{
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/invoices")
+    fetch("http://localhost:5000/api/invoice/invoice")
     .then(res=>res.json())
     .then(data=>setInvoices(data))
 
   },[])
 
-  const filtered = invoices.filter(i =>
-    i.HopDong.toLowerCase().includes(search.toLowerCase())
+  const filtered = invoices.filter(c =>
+    c.HopDongID.toString().includes(search)
   )
-
   return(
 
     <div>
@@ -58,8 +57,8 @@ const Invoices = () =>{
             <th>ID</th>
             <th>Hợp đồng</th>
             <th>Số tiền</th>
-            <th>Ngày phát hành</th>
-            <th>Thanh toán</th>
+            <th>Ngày lập</th>
+            <th>Phần Trăm Thanh toán</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -71,10 +70,10 @@ const Invoices = () =>{
             <tr key={i.HoaDonID}>
 
               <td>{i.HoaDonID}</td>
-              <td>{i.HopDong}</td>
+              <td>{i.HopDongID}</td>
               <td>{i.SoTien.toLocaleString()}</td>
-              <td>{new Date(i.NgayPhatHanh).toLocaleDateString()}</td>
-              <td>{i.TrangThai}</td>
+              <td>{new Date(i.NgayLap).toLocaleDateString()}</td>
+              <td>{i.PhanTramDaThanhToan}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>
