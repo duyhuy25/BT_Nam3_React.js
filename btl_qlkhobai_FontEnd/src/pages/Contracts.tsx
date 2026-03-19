@@ -3,10 +3,12 @@ import "./Pages.css";
 
 interface Contract{
   HopDongID:number
-  KhachHang:string
+  KhachHangID:number
   NgayKy:string
   NgayHetHan:string
+  LoaiDichVu: string
   GiaTri:number
+  TrangThai: string
 }
 
 const Contracts = () =>{
@@ -16,14 +18,14 @@ const Contracts = () =>{
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/contracts")
+    fetch("http://localhost:5000/api/contract/contract")
     .then(res=>res.json())
     .then(data=>setContracts(data))
 
   },[])
 
   const filtered = contracts.filter(c =>
-    c.KhachHang.toLowerCase().includes(search.toLowerCase())
+    c.KhachHangID.toString().includes(search)
   )
 
   return(
@@ -59,11 +61,12 @@ const Contracts = () =>{
             <th>Khách hàng</th>
             <th>Ngày ký</th>
             <th>Ngày hết hạn</th>
+            <th>Loại Dịch Vụ</th>
             <th>Giá trị</th>
+            <th>Trạng thái</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
-
         <tbody>
 
           {filtered.map(c =>(
@@ -71,10 +74,12 @@ const Contracts = () =>{
             <tr key={c.HopDongID}>
 
               <td>{c.HopDongID}</td>
-              <td>{c.KhachHang}</td>
+              <td>{c.KhachHangID}</td>
               <td>{new Date(c.NgayKy).toLocaleDateString()}</td>
               <td>{new Date(c.NgayHetHan).toLocaleDateString()}</td>
+              <td>{c.LoaiDichVu}</td>
               <td>{c.GiaTri.toLocaleString()}</td>
+              <td>{c.TrangThai}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

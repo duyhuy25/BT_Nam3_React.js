@@ -12,6 +12,8 @@ import "./App.css";
 import Vehicles from "./pages/Vehicles";
 import Trips from "./pages/Trips";
 import Ports from "./pages/Ports";
+import Customers from "./pages/Customers";
+import Contracts from "./pages/Contracts";
 
 function App() {
 
@@ -35,6 +37,10 @@ function App() {
           return <Trips/>
       case "ports":
         return <Ports/>
+      case "customers":
+        return <Customers/>
+      case "contracts":
+        return <Contracts/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;

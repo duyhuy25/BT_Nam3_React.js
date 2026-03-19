@@ -3,10 +3,10 @@ import "./Pages.css";
 
 interface Customer {
   KhachHangID: number;
-  TenKhachHang: string;
-  Email: string;
-  DienThoai: string;
+  TenKH: string;
   DiaChi: string;
+  SDT: string;
+  Email: string;
 }
 
 const Customers = () => {
@@ -15,13 +15,13 @@ const Customers = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/customers")
+    fetch("http://localhost:5000/api/customer/customer")
       .then(res => res.json())
       .then(data => setCustomers(data));
   }, []);
 
   const filtered = customers.filter(c =>
-    c.TenKhachHang.toLowerCase().includes(search.toLowerCase())
+    c.TenKH.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -53,9 +53,9 @@ const Customers = () => {
           <tr>
             <th>ID</th>
             <th>Tên</th>
-            <th>Email</th>
-            <th>Điện thoại</th>
             <th>Địa chỉ</th>
+            <th>Điện thoại</th>
+            <th>Email</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -66,10 +66,10 @@ const Customers = () => {
 
             <tr key={c.KhachHangID}>
               <td>{c.KhachHangID}</td>
-              <td>{c.TenKhachHang}</td>
-              <td>{c.Email}</td>
-              <td>{c.DienThoai}</td>
+              <td>{c.TenKH}</td>
               <td>{c.DiaChi}</td>
+              <td>{c.SDT}</td>
+              <td>{c.Email}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

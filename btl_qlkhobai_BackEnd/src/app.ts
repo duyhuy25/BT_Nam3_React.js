@@ -7,6 +7,8 @@ import warehouseRoutes from "./routes/warehousesRoutes"
 import vehicle from "./routes/vehicleRoutes"
 import trip from "./routes/tripsRoutes"
 import port from "./routes/portRoutes"
+import customer from "./routes/customerRoutes"
+import contract from "./routes/contractRoutes"
 
 const app = express();
 
@@ -20,5 +22,7 @@ app.use("/api/warehouse", warehouseRoutes);
 app.use("/api/vehicle", vehicle);
 app.use("/api/trip", trip);
 app.use("/api/port", port);
+app.use("/api/customer", customer);
+app.use("/api/contract", contract);
 
 export default app;
