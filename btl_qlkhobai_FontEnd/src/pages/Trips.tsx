@@ -4,11 +4,11 @@ import "./Pages.css";
 interface Trip {
   ChuyenDiID: number;
   MaChuyen: string;
-  CangDi: string;
-  CangDen: string;
-  ETD: string;
-  ETA: string;
-  PhuongTien: string;
+  CangDiID: string;
+  CangDenID: string;
+  NgayKhoiHanh: string;
+  NgayDuKienDen: string;
+  PhuongTienID: string;
   TrangThai: string;
 }
 
@@ -19,7 +19,7 @@ const Trips = () => {
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/trips")
+    fetch("http://localhost:5000/api/trip/trip")
     .then(res=>res.json())
     .then(data=>setTrips(data));
 
@@ -78,11 +78,11 @@ const Trips = () => {
 
               <td>{t.ChuyenDiID}</td>
               <td>{t.MaChuyen}</td>
-              <td>{t.CangDi}</td>
-              <td>{t.CangDen}</td>
-              <td>{new Date(t.ETD).toLocaleDateString()}</td>
-              <td>{new Date(t.ETA).toLocaleDateString()}</td>
-              <td>{t.PhuongTien}</td>
+              <td>{t.CangDiID}</td>
+              <td>{t.CangDenID}</td>
+              <td>{new Date(t.NgayKhoiHanh).toLocaleDateString()}</td>
+              <td>{new Date(t.NgayDuKienDen).toLocaleDateString()}</td>
+              <td>{t.PhuongTienID}</td>
               <td>{t.TrangThai}</td>
 
               <td>

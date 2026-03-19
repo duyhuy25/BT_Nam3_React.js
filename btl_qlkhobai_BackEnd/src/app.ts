@@ -5,6 +5,7 @@ import containerRoutes from "./routes/containerRoutes"
 import itemtypeRoutes from "./routes/itemtypeRoutes"
 import warehouseRoutes from "./routes/warehousesRoutes"
 import vehicle from "./routes/vehicleRoutes"
+import trip from "./routes/tripsRoutes"
 
 const app = express();
 
@@ -16,5 +17,6 @@ app.use("/api/container", containerRoutes);
 app.use("/api/itemtype", itemtypeRoutes);
 app.use("/api/warehouse", warehouseRoutes);
 app.use("/api/vehicle", vehicle);
+app.use("/api/trip", trip);
 
 export default app;

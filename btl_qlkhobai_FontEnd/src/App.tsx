@@ -10,6 +10,7 @@ import Warehouses from "./pages/Warehouses";
 
 import "./App.css";
 import Vehicles from "./pages/Vehicles";
+import Trips from "./pages/Trips";
 
 function App() {
 
@@ -31,6 +32,8 @@ function App() {
           return <Warehouses />;
       case "vehicles":
           return <Vehicles />;
+      case "trips":
+          return <Trips/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;
