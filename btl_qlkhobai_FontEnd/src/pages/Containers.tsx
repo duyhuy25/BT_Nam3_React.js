@@ -23,30 +23,28 @@ interface Vehicle {
 }
 
 const Containers = () => {
-
   const [containers, setContainers] = useState<Container[]>([]);
   const [itemTypes, setItemTypes] = useState<ItemType[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-
     fetch("http://localhost:5000/api/container/container")
       .then(res => res.json())
-      .then(data => setContainers(data))
-      .catch(err => console.error(err));
+      .then(data => setContainers(data));
 
     fetch("http://localhost:5000/api/itemtype/itemtype")
       .then(res => res.json())
-      .then(data => setItemTypes(data))
-      .catch(err => console.error(err));
+      .then(data => setItemTypes(data));
 
     fetch("http://localhost:5000/api/vehicle/vehicle")
       .then(res => res.json())
-      .then(data => setVehicles(data))
-      .catch(err => console.error(err));
-
+      .then(data => setVehicles(data));
   }, []);
+
+  const formatID = (id: number) => {
+    return "CTN" + id.toString().padStart(3, "0");
+  };
 
   const getLoaiHangName = (id: string) => {
     const found = itemTypes.find(x => x.LoaiHangID === id);
@@ -58,8 +56,23 @@ const Containers = () => {
     return found ? found.BienSo : id;
   };
 
+  const handleAdd = () => {
+    const newItem: Container = {
+      ContainerID: containers.length + 1,
+      LoaiHangID: "LH01",
+      TrongLuong: 1000,
+      TrangThai: "Mới",
+      KhoID: "KHO01",
+      PhuongTienID: "XE01",
+      HopDongID: 1,
+      ChuyenDiID: "CD01"
+    };
+
+    setContainers([...containers, newItem]);
+  };
+
   const filteredContainers = containers.filter(c =>
-    (c.ContainerID + "").includes(search) ||
+    formatID(c.ContainerID).includes(search) ||
     getLoaiHangName(c.LoaiHangID).toLowerCase().includes(search.toLowerCase()) ||
     getBienSo(c.PhuongTienID).toLowerCase().includes(search.toLowerCase())
   );
@@ -77,11 +90,13 @@ const Containers = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="btn-add">
-            + Thêm lịch sử
+
+          <button className="btn-add" onClick={handleAdd}>
+            + Thêm container
           </button>
         </div>
       </div>
+
       <table>
         <thead>
           <tr>
@@ -95,11 +110,11 @@ const Containers = () => {
             <th>Hành động</th>
           </tr>
         </thead>
+
         <tbody>
           {filteredContainers.map((c) => (
-
             <tr key={c.ContainerID}>
-              <td>{c.ContainerID}</td>
+              <td>{formatID(c.ContainerID)}</td>
               <td>{getLoaiHangName(c.LoaiHangID)}</td>
               <td>{c.TrongLuong} kg</td>
               <td>{c.TrangThai}</td>
@@ -111,9 +126,7 @@ const Containers = () => {
                 <button className="btn-edit">Sửa</button>
                 <button className="btn-delete">Xóa</button>
               </td>
-
             </tr>
-
           ))}
         </tbody>
       </table>
