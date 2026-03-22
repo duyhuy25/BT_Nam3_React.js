@@ -25,7 +25,6 @@ const ContainerHistory: React.FC = () => {
     ViTri: ""
   });
 
-  // 🔹 LOAD DATA
   const fetchData = async () => {
     const res = await fetch("http://localhost:5000/api/history/containerhistory");
     const data = await res.json();
@@ -36,12 +35,10 @@ const ContainerHistory: React.FC = () => {
     fetchData();
   }, []);
 
-  // 🔹 SEARCH
   const filteredHistory = history.filter((h) =>
     h.ContainerID.toString().includes(search)
   );
 
-  // 🔹 HANDLE INPUT
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
@@ -49,7 +46,6 @@ const ContainerHistory: React.FC = () => {
     });
   };
 
-  // 🔥 OPEN ADD
   const handleOpenAdd = () => {
     setIsEdit(false);
     setForm({
@@ -61,7 +57,6 @@ const ContainerHistory: React.FC = () => {
     setShowForm(true);
   };
 
-  // 🔥 OPEN EDIT
   const handleOpenEdit = (item: History) => {
     setIsEdit(true);
     setSelected(item);
@@ -69,14 +64,13 @@ const ContainerHistory: React.FC = () => {
     setForm({
       ContainerID: item.ContainerID.toString(),
       HoatDong: item.HoatDong,
-      ThoiGian: item.ThoiGian.slice(0, 16), // fix datetime-local
+      ThoiGian: item.ThoiGian.slice(0, 16), 
       ViTri: item.ViTri
     });
 
     setShowForm(true);
   };
 
-  // 🔥 SUBMIT
   const handleSubmit = async () => {
     const data = {
       ...form,
@@ -101,7 +95,6 @@ const ContainerHistory: React.FC = () => {
     fetchData();
   };
 
-  // 🔥 DELETE
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
@@ -179,7 +172,6 @@ const ContainerHistory: React.FC = () => {
         </tbody>
       </table>
 
-      {/* 🔥 MODAL */}
       {showForm && (
         <div className="modal">
           <div className="modal-content">
