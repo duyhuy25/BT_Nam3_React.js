@@ -9,22 +9,107 @@ interface History {
   ViTri: string;
 }
 
-const ContainerHistory = () => {
+const ContainerHistory: React.FC = () => {
 
   const [history, setHistory] = useState<History[]>([]);
   const [search, setSearch] = useState("");
 
+  const [showForm, setShowForm] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [selected, setSelected] = useState<History | null>(null);
+
+  const [form, setForm] = useState({
+    ContainerID: "",
+    HoatDong: "",
+    ThoiGian: "",
+    ViTri: ""
+  });
+
+  // 🔹 LOAD DATA
+  const fetchData = async () => {
+    const res = await fetch("http://localhost:5000/api/history/containerhistory");
+    const data = await res.json();
+    setHistory(data);
+  };
+
   useEffect(() => {
-    fetch("http://localhost:5000/api/history/containerhistory")
-      .then(res => res.json())
-      .then(data => setHistory(data));
+    fetchData();
   }, []);
 
+  // 🔹 SEARCH
   const filteredHistory = history.filter((h) =>
     h.ContainerID.toString().includes(search)
   );
-  const formatID = (id: number) => {
-    return "LS" + id.toString().padStart(3, "0");
+
+  // 🔹 HANDLE INPUT
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // 🔥 OPEN ADD
+  const handleOpenAdd = () => {
+    setIsEdit(false);
+    setForm({
+      ContainerID: "",
+      HoatDong: "",
+      ThoiGian: "",
+      ViTri: ""
+    });
+    setShowForm(true);
+  };
+
+  // 🔥 OPEN EDIT
+  const handleOpenEdit = (item: History) => {
+    setIsEdit(true);
+    setSelected(item);
+
+    setForm({
+      ContainerID: item.ContainerID.toString(),
+      HoatDong: item.HoatDong,
+      ThoiGian: item.ThoiGian.slice(0, 16), // fix datetime-local
+      ViTri: item.ViTri
+    });
+
+    setShowForm(true);
+  };
+
+  // 🔥 SUBMIT
+  const handleSubmit = async () => {
+    const data = {
+      ...form,
+      ContainerID: Number(form.ContainerID)
+    };
+
+    if (isEdit && selected) {
+      await fetch(`http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+    } else {
+      await fetch("http://localhost:5000/api/history/containerhistory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+    }
+
+    setShowForm(false);
+    fetchData();
+  };
+
+  // 🔥 DELETE
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+
+    await fetch(`http://localhost:5000/api/history/containerhistory/${id}`, {
+      method: "DELETE"
+    });
+
+    fetchData();
   };
 
   return (
@@ -33,7 +118,6 @@ const ContainerHistory = () => {
         <h2>📜 Lịch sử Container</h2>
 
         <div className="toolbar">
-
           <input
             type="text"
             placeholder="🔍 Tìm lịch container..."
@@ -42,15 +126,13 @@ const ContainerHistory = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <button className="btn-add">
+          <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm lịch sử
           </button>
-
         </div>
       </div>
 
       <table>
-
         <thead>
           <tr>
             <th>ID</th>
@@ -63,10 +145,8 @@ const ContainerHistory = () => {
         </thead>
 
         <tbody>
-
           {filteredHistory.map((h) => (
-
-            <tr key={h.LichSuID}>
+            <tr key={h.LichSuID} onClick={() => handleOpenEdit(h)}>
               <td>{h.LichSuID}</td>
               <td>{h.ContainerID}</td>
               <td>{h.HoatDong}</td>
@@ -74,18 +154,77 @@ const ContainerHistory = () => {
               <td>{h.ViTri}</td>
 
               <td>
-                <button className="btn-edit">Sửa</button>
-                <button className="btn-delete">Xóa</button>
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(h);
+                  }}
+                >
+                  Sửa
+                </button>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(h.LichSuID);
+                  }}
+                >
+                  Xóa
+                </button>
               </td>
-
             </tr>
-
           ))}
-
         </tbody>
-
       </table>
 
+      {/* 🔥 MODAL */}
+      {showForm && (
+        <div className="modal">
+          <div className="modal-content">
+
+            <h3>{isEdit ? "Sửa" : "Thêm"} lịch sử</h3>
+
+            <input
+              name="ContainerID"
+              placeholder="Container ID"
+              value={form.ContainerID}
+              onChange={handleChange}
+            />
+
+            <input
+              name="HoatDong"
+              placeholder="Hoạt động"
+              value={form.HoatDong}
+              onChange={handleChange}
+            />
+
+            <input
+              name="ThoiGian"
+              type="datetime-local"
+              value={form.ThoiGian}
+              onChange={handleChange}
+            />
+
+            <input
+              name="ViTri"
+              placeholder="Vị trí"
+              value={form.ViTri}
+              onChange={handleChange}
+            />
+
+            <button onClick={handleSubmit}>
+              {isEdit ? "Cập nhật" : "Thêm"}
+            </button>
+
+            <button onClick={() => setShowForm(false)}>
+              Hủy
+            </button>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

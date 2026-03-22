@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Pages.css";
+import FormInput from "../component/FormInput";
 
 interface Container {
   ContainerID: number;
@@ -12,38 +13,27 @@ interface Container {
   ChuyenDiID: string;
 }
 
-interface ItemType {
-  LoaiHangID: string;
-  TenLoai: string;
-}
-
-interface Vehicle {
-  PhuongTienID: string;
-  BienSo: string;
-}
-
-const Containers = () => {
+const Containers: React.FC = () => {
   const [containers, setContainers] = useState<Container[]>([]);
-  const [itemTypes, setItemTypes] = useState<ItemType[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState("");
 
-  // 🔹 LOAD DATA
+  const [form, setForm] = useState({
+    LoaiHangID: "",
+    TrongLuong: "",
+    TrangThai: "",
+    KhoID: "",
+    PhuongTienID: "",
+    HopDongID: "",
+    ChuyenDiID: ""
+  });
+
   const fetchData = async () => {
     try {
-      const res1 = await fetch("http://localhost:5000/api/container/container");
-      const data1 = await res1.json();
-      setContainers(data1);
-
-      const res2 = await fetch("http://localhost:5000/api/itemtype/itemtype");
-      const data2 = await res2.json();
-      setItemTypes(data2);
-
-      const res3 = await fetch("http://localhost:5000/api/vehicle/vehicle");
-      const data3 = await res3.json();
-      setVehicles(data3);
-    } catch (error) {
-      console.error("Lỗi load dữ liệu:", error);
+      const res = await fetch("http://localhost:5000/api/container/container");
+      const data = await res.json();
+      setContainers(data);
+    } catch (err) {
+      console.error("Lỗi load:", err);
     }
   };
 
@@ -51,29 +41,18 @@ const Containers = () => {
     fetchData();
   }, []);
 
-  const formatID = (id: number) => {
-    return "CTN" + id.toString().padStart(3, "0");
-  };
-
-  const getLoaiHangName = (id: string) => {
-    const found = itemTypes.find(x => x.LoaiHangID === id);
-    return found ? found.TenLoai : id;
-  };
-
-  const getBienSo = (id: string) => {
-    const found = vehicles.find(x => x.PhuongTienID === id);
-    return found ? found.BienSo : id;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleAdd = async () => {
     const newItem = {
-      LoaiHangID: "LH01",
-      TrongLuong: 1000,
-      TrangThai: "Mới",
-      KhoID: "KHO01",
-      PhuongTienID: "XE01",
-      HopDongID: 1,
-      ChuyenDiID: "CD01"
+      ...form,
+      TrongLuong: Number(form.TrongLuong),
+      HopDongID: Number(form.HopDongID)
     };
 
     try {
@@ -87,13 +66,23 @@ const Containers = () => {
 
       fetchData();
 
-    } catch (error) {
-      console.error("Lỗi thêm:", error);
+      setForm({
+        LoaiHangID: "",
+        TrongLuong: "",
+        TrangThai: "",
+        KhoID: "",
+        PhuongTienID: "",
+        HopDongID: "",
+        ChuyenDiID: ""
+      });
+
+    } catch (err) {
+      console.error("Lỗi thêm:", err);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc muốn xóa không?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
       await fetch(`http://localhost:5000/api/container/container/${id}`, {
@@ -101,37 +90,37 @@ const Containers = () => {
       });
 
       fetchData();
-    } catch (error) {
-      console.error("Lỗi xóa:", error);
+    } catch (err) {
+      console.error("Lỗi xóa:", err);
     }
   };
 
-  const filteredContainers = containers.filter(c =>
-    formatID(c.ContainerID).includes(search) ||
-    getLoaiHangName(c.LoaiHangID).toLowerCase().includes(search.toLowerCase()) ||
-    getBienSo(c.PhuongTienID).toLowerCase().includes(search.toLowerCase())
+  const formatID = (id: number) =>
+    "CTN" + id.toString().padStart(3, "0");
+
+  const filtered = containers.filter(c =>
+    formatID(c.ContainerID).includes(search)
   );
 
   return (
     <div>
-      <div className="header">
-        <h2>📦 Danh sách Container</h2>
+      <h2>📦 Danh sách Container</h2>
+      <div className="form">
+        <FormInput label="Loại hàng" name="LoaiHangID" value={form.LoaiHangID} onChange={handleChange} />
+        <FormInput label="Trọng lượng" name="TrongLuong" value={form.TrongLuong} onChange={handleChange} />
+        <FormInput label="Trạng thái" name="Trạng thái" value={form.TrangThai} onChange={handleChange} />
+        <FormInput label="Kho" name="KhoID" value={form.KhoID} onChange={handleChange} />
+        <FormInput label="Phương tiện" name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange} />
+        <FormInput label="Hợp đồng" name="HopDongID" value={form.HopDongID} onChange={handleChange} />
+        <FormInput label="Chuyến đi" name="ChuyenDiID" value={form.ChuyenDiID} onChange={handleChange} />
 
-        <div className="toolbar">
-          <input
-            type="text"
-            placeholder="🔍 Tìm container..."
-            className="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button className="btn-add" onClick={handleAdd}>
-            + Thêm container
-          </button>
-        </div>
+        <button onClick={handleAdd}>+ Thêm</button>
       </div>
-
+      <input
+        placeholder="🔍 Tìm ID..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
       <table>
         <thead>
           <tr>
@@ -147,24 +136,17 @@ const Containers = () => {
         </thead>
 
         <tbody>
-          {filteredContainers.map((c) => (
+          {filtered.map((c) => (
             <tr key={c.ContainerID}>
               <td>{formatID(c.ContainerID)}</td>
-              <td>{getLoaiHangName(c.LoaiHangID)}</td>
-              <td>{c.TrongLuong} kg</td>
+              <td>{c.LoaiHangID}</td>
+              <td>{c.TrongLuong}</td>
               <td>{c.TrangThai}</td>
               <td>{c.KhoID}</td>
-              <td>{getBienSo(c.PhuongTienID)}</td>
+              <td>{c.PhuongTienID}</td>
               <td>{c.HopDongID}</td>
-
               <td>
-                <button className="btn-edit">Sửa</button>
-                <button
-                  className="btn-delete"
-                  onClick={() => handleDelete(c.ContainerID)}
-                >
-                  Xóa
-                </button>
+                <button onClick={() => handleDelete(c.ContainerID)}>Xóa</button>
               </td>
             </tr>
           ))}
