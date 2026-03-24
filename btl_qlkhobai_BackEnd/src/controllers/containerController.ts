@@ -3,7 +3,8 @@ import {
   fetchContainer,
   createContainerService,
   updateContainerService,
-  deleteContainerService
+  deleteContainerService,
+  searchContainersService,
 } from "../services/containerService";
 
 export const getContainers = async (req: Request, res: Response) => {
@@ -45,5 +46,19 @@ export const deleteContainer = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const searchContainers = async (req: Request, res: Response) => {
+  try {
+    const { search } = req.query;
+    const data = await searchContainersService(String(search || ""));
+    res.json(data);
+  } catch (error: any) {
+    console.error("=== SEARCH ERROR ===", error);
+    res.status(500).json({ 
+      message: "Lỗi khi tìm kiếm container",
+      detail: error.message 
+    });
   }
 };

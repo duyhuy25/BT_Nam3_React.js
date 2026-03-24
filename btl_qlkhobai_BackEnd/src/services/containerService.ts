@@ -2,7 +2,8 @@ import {
   getAllContainer,
   createContainer,
   updateContainer,
-  deleteContainer
+  deleteContainer,
+  searchContainer,          
 } from "../repositories/containerRepository";
 
 export const fetchContainer = async () => {
@@ -19,4 +20,8 @@ export const updateContainerService = async (id: number, data: any) => {
 
 export const deleteContainerService = async (id: number) => {
   return await deleteContainer(id);
+};
+
+export const searchContainersService = async (searchTerm: string = "") => {
+  return await searchContainer(searchTerm);
 };

@@ -1,14 +1,16 @@
-import { Router } from "express";
+import express from "express";
 import {
   getContainers,
   addContainer,
   updateContainer,
-  deleteContainer
+  deleteContainer,
+  searchContainers,
 } from "../controllers/containerController";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/container", getContainers);
+router.get("/container", getContainers);                   
+router.get("/container/search", searchContainers);      
 router.post("/addcontainer", addContainer);
 router.put("/container/:id", updateContainer);
 router.delete("/container/:id", deleteContainer);
