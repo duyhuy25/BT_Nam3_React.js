@@ -11,6 +11,7 @@ interface Customer {
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,44 +27,42 @@ const Customers: React.FC = () => {
     Email: "",
   });
 
-  const fetchCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (searchTerm: string = "") => {
     try {
-      const res = await fetch("http://localhost:5000/api/customer/customer");
+      setLoading(true);
+
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/customer/customer/search?search=${encodeURIComponent(searchTerm)}`
+        : "http://localhost:5000/api/customer/customer";
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải danh sách khách hàng");
+
       const data = await res.json();
       setCustomers(data);
     } catch (err: any) {
       setError(err.message || "Không thể tải khách hàng");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      await fetchCustomers();
-      setLoading(false);
-    };
-    loadData();
+    fetchCustomers();
   }, [fetchCustomers]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchCustomers(search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [search, fetchCustomers]);
 
   const formatID = (id: number) => "KH" + id.toString().padStart(3, "0");
 
-  const filteredCustomers = customers.filter((c) => {
-    const searchLower = search.toLowerCase();
-    return (
-      formatID(c.KhachHangID).toLowerCase().includes(searchLower) ||
-      c.TenKH.toLowerCase().includes(searchLower) ||
-      c.SDT.toLowerCase().includes(searchLower) ||
-      c.Email.toLowerCase().includes(searchLower) ||
-      c.DiaChi.toLowerCase().includes(searchLower)
-    );
-  });
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
@@ -99,6 +98,7 @@ const Customers: React.FC = () => {
       alert("Vui lòng nhập tên khách hàng");
       return;
     }
+
     if (!form.SDT.trim()) {
       alert("Vui lòng nhập số điện thoại");
       return;
@@ -117,7 +117,7 @@ const Customers: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/customer/customer", {
+        await fetch("http://localhost:5000/api/customer/addcustomer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -125,29 +125,30 @@ const Customers: React.FC = () => {
       }
 
       setShowForm(false);
-      fetchCustomers();
+      fetchCustomers(search);
     } catch (err) {
-      console.error("Submit error:", err);
+      console.error(err);
       alert("Có lỗi khi lưu khách hàng");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa khách hàng này?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
       await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
         method: "DELETE",
       });
-      fetchCustomers();
+
+      fetchCustomers(search);
     } catch (err) {
-      console.error("Delete error:", err);
-      alert("Không thể xóa khách hàng (có thể đang liên kết với hợp đồng)");
+      console.error(err);
+      alert("Không thể xóa (có thể đang liên kết dữ liệu)");
     }
   };
 
-  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
+  {loading && <div className="loading">Đang tải dữ liệu...</div>}
+  {error && <div className="error">Lỗi: {error}</div>}
 
   return (
     <div>
@@ -157,7 +158,7 @@ const Customers: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm khách hàng (tên, SĐT, email, địa chỉ...)"
+            placeholder="🔍 Tìm khách hàng..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -182,7 +183,7 @@ const Customers: React.FC = () => {
         </thead>
 
         <tbody>
-          {filteredCustomers.map((c) => (
+          {customers.map((c) => (
             <tr key={c.KhachHangID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.KhachHangID)}</td>
               <td>{c.TenKH}</td>
@@ -224,16 +225,13 @@ const Customers: React.FC = () => {
             <label>Tên khách hàng *</label>
             <input
               name="TenKH"
-              placeholder="Nhập tên khách hàng"
               value={form.TenKH}
               onChange={handleChange}
-              required
             />
 
             <label>Địa chỉ</label>
             <input
               name="DiaChi"
-              placeholder="Nhập địa chỉ đầy đủ"
               value={form.DiaChi}
               onChange={handleChange}
             />
@@ -242,17 +240,14 @@ const Customers: React.FC = () => {
             <input
               type="tel"
               name="SDT"
-              placeholder="Ví dụ: 0909123456"
               value={form.SDT}
               onChange={handleChange}
-              required
             />
 
             <label>Email</label>
             <input
               type="email"
               name="Email"
-              placeholder="Ví dụ: khachhang@example.com"
               value={form.Email}
               onChange={handleChange}
             />
@@ -261,7 +256,11 @@ const Customers: React.FC = () => {
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
                 Hủy
               </button>
             </div>

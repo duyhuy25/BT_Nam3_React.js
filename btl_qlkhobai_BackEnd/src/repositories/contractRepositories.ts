@@ -1,4 +1,5 @@
 import { poolPromise } from "../config/db";
+import sql from "mssql";
 
 export const getAllContract = async () => {
   const pool = await poolPromise;
@@ -56,16 +57,34 @@ export const deleteContractById = async (id: number) => {
     .query("DELETE FROM HopDong WHERE HopDongID = @HopDongID");
 };
 
-export const searchContractByKeyword = async (keyword: string) => {
+export const searchContractByKeyword = async (searchTerm = "") => {
   const pool = await poolPromise;
+  const request = pool.request();
+  const term = searchTerm?.trim();
 
-  const result = await pool.request()
-    .input("keyword", `%${keyword}%`)
-    .query(`
-      SELECT * FROM HopDong
-      WHERE LoaiDichVu LIKE @keyword
-         OR TrangThai LIKE @keyword
-    `);
+  let query = `
+    SELECT 
+      h.*,
+      kh.TenKH,
+      'HD' + RIGHT('000' + CAST(h.HopDongID AS VARCHAR(3)), 3) AS FormattedID
+    FROM HopDong h
+    LEFT JOIN KhachHang kh ON h.KhachHangID = kh.KhachHangID
+  `;
 
+  if (term) {
+    query += `
+      WHERE 
+        ('HD' + RIGHT('000' + CAST(h.HopDongID AS VARCHAR(3)), 3)) LIKE @search
+        OR kh.TenKH LIKE @search
+        OR h.LoaiDichVu LIKE @search
+        OR h.TrangThai LIKE @search
+        OR CAST(h.GiaTri AS VARCHAR(20)) LIKE @search
+    `;
+    request.input("search", sql.NVarChar(100), `%${term}%`);
+  }
+
+  query += " ORDER BY h.HopDongID DESC";
+
+  const result = await request.query(query);
   return result.recordset;
 };

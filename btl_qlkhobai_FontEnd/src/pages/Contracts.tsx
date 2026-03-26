@@ -195,8 +195,8 @@ const Contracts: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
-  if (error) return <div className="error">Lỗi: {error}</div>;
+  {loading && <div className="loading">Đang tải dữ liệu...</div>}
+  {error && <div className="error">Lỗi: {error}</div>}
 
   return (
     <div>
