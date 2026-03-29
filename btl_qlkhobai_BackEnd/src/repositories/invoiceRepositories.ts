@@ -12,7 +12,7 @@ export const getAllInvoice = async () => {
     FROM HoaDon hd
     LEFT JOIN HopDong h ON hd.HopDongID = h.HopDongID
     LEFT JOIN KhachHang kh ON h.KhachHangID = kh.KhachHangID
-    ORDER BY hd.HoaDonID DESC
+    ORDER BY hd.HoaDonID ASC
   `);
 
   return result.recordset;
