@@ -14,7 +14,7 @@ export const getAllUser = async () => {
       v.TenVaiTro
     FROM Users u
     LEFT JOIN VaiTro v ON u.RoleID = v.RoleID
-    ORDER BY u.UserID DESC
+    ORDER BY u.UserID ASC
   `);
 
   return result.recordset;

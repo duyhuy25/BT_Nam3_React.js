@@ -9,7 +9,7 @@ interface User {
   Email: string;
   TrangThai: string;
   TenVaiTro?: string;
-  RoleID: number | null | undefined;   // Cho phép null/undefined
+  RoleID: number | null | undefined;
 }
 
 const Users: React.FC = () => {
@@ -32,10 +32,11 @@ const Users: React.FC = () => {
     RoleID: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const fetchUsers = useCallback(async (searchTerm: string = "") => {
     try {
       setLoading(true);
-      setError(null);
 
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/user/user/search?search=${encodeURIComponent(searchTerm)}`
@@ -53,22 +54,26 @@ const Users: React.FC = () => {
     }
   }, []);
 
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       fetchUsers(search);
     }, 400);
 
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(timeoutId);
   }, [search, fetchUsers]);
 
   const formatID = (id: number) => "USR" + id.toString().padStart(3, "0");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleOpenAdd = () => {
@@ -82,6 +87,7 @@ const Users: React.FC = () => {
       TrangThai: "Hoạt động",
       RoleID: "1",
     });
+    setShowPassword(false);
     setShowForm(true);
   };
 
@@ -95,9 +101,9 @@ const Users: React.FC = () => {
       HoTen: item.HoTen || "",
       Email: item.Email || "",
       TrangThai: item.TrangThai || "Hoạt động",
-      RoleID: (item.RoleID ?? 1).toString(),     // ← Đây là dòng quan trọng nhất
+      RoleID: (item.RoleID ?? 1).toString(),
     });
-
+    setShowPassword(false);
     setShowForm(true);
   };
 
@@ -106,57 +112,54 @@ const Users: React.FC = () => {
       alert("Vui lòng nhập đầy đủ thông tin bắt buộc (Username, Họ tên, RoleID)!");
       return;
     }
-  
+
     const payload: any = {
       Username: form.Username,
       HoTen: form.HoTen,
       Email: form.Email || null,
       TrangThai: form.TrangThai || "Hoạt động",
-      RoleID: Number(form.RoleID),        // Ép kiểu số
+      RoleID: Number(form.RoleID),
     };
-  
-    if (form.PasswordHash && form.PasswordHash.trim() !== "") {
+
+    if (form.PasswordHash?.trim()) {
       payload.PasswordHash = form.PasswordHash;
     }
-  
+
     try {
       let res: Response;
-  
+
       if (isEdit && selected) {
-        res = await fetch(
-          `http://localhost:5000/api/user/user/${selected.UserID}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }
-        );
+        res = await fetch(`http://localhost:5000/api/user/user/${selected.UserID}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
       } else {
-        if (!form.PasswordHash || !form.PasswordHash.trim()) {
+        if (!form.PasswordHash?.trim()) {
           alert("Vui lòng nhập mật khẩu khi thêm người dùng mới!");
           return;
         }
         res = await fetch("http://localhost:5000/api/user/adduser", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
       }
-  
+
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(errorText || "Lỗi server");
       }
-  
+
       alert(isEdit ? "Cập nhật thành công!" : "Thêm người dùng thành công!");
       setShowForm(false);
-      fetchUsers(search);
+      fetchUsers(search);   
     } catch (err: any) {
       console.error(err);
       alert("Lỗi: " + (err.message || "Vui lòng thử lại"));
     }
   };
-  
+
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
@@ -172,13 +175,13 @@ const Users: React.FC = () => {
 
   const maskPassword = (password: string): string => password ? "*".repeat(8) : "Chưa có";
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
       <div className="header">
         <h2>👤 Danh sách người dùng</h2>
+
         <div className="toolbar">
           <input
             type="text"
@@ -186,7 +189,9 @@ const Users: React.FC = () => {
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"          
           />
+
           <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm người dùng
           </button>
@@ -206,6 +211,7 @@ const Users: React.FC = () => {
             <th>Tác vụ</th>
           </tr>
         </thead>
+
         <tbody>
           {users.map((u) => (
             <tr key={u.UserID} onClick={() => handleOpenEdit(u)}>
@@ -213,7 +219,7 @@ const Users: React.FC = () => {
               <td>{u.Username}</td>
               <td className="password-cell">{maskPassword(u.PasswordHash)}</td>
               <td>{u.HoTen}</td>
-              <td>{u.Email}</td>
+              <td>{u.Email || "-"}</td>
               <td>{u.TrangThai}</td>
               <td>{u.TenVaiTro || u.RoleID || "-"}</td>
 
@@ -241,14 +247,36 @@ const Users: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} người dùng</h3>
 
-            <input name="Username" value={form.Username} onChange={handleChange} placeholder="Tài khoản" />
             <input 
-              name="PasswordHash" 
-              type="password"
-              value={form.PasswordHash} 
+              name="Username" 
+              value={form.Username} 
               onChange={handleChange} 
-              placeholder={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"} 
+              placeholder="Tài khoản" 
             />
+
+            <div style={{ position: 'relative' }}>
+              <input 
+                name="PasswordHash" 
+                type={showPassword ? "text" : "password"}
+                value={form.PasswordHash} 
+                onChange={handleChange} 
+                placeholder={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"} 
+              />
+              <span 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  cursor: 'pointer',
+                  fontSize: '18px'
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </span>
+            </div>
+
             <input name="HoTen" value={form.HoTen} onChange={handleChange} placeholder="Họ tên" />
             <input name="Email" value={form.Email} onChange={handleChange} placeholder="Email" />
 
@@ -263,7 +291,7 @@ const Users: React.FC = () => {
               type="number" 
               value={form.RoleID} 
               onChange={handleChange} 
-              placeholder="RoleID" 
+              placeholder="RoleID (Vai trò)" 
               min="1"
             />
 
