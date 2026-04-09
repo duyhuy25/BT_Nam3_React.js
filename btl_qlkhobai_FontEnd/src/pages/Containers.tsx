@@ -162,7 +162,7 @@ const Containers: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm kiếm trực tiếp từ Backend..."
+            placeholder="🔍 Tìm kiếm container..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
