@@ -66,12 +66,12 @@ const Vehicles: React.FC = () => {
   const formatID = (id: number) =>
     "VH" + id.toString().padStart(3, "0");
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setForm({
+        ...form,
+        [e.target.name]: e.target.value
+      });
+    };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
@@ -209,7 +209,17 @@ const Vehicles: React.FC = () => {
               <td>{formatID(v.PhuongTienID)}</td>
               <td>{v.LoaiPhuongTien}</td>
               <td>{v.BienSo}</td>
-              <td>{v.HinhAnh}</td>
+              <td>
+                {v.HinhAnh ? (
+                  <img
+                    src={`/images/${v.HinhAnh}`}
+                    alt="vehicle"
+                    style={{ width: "60px", height: "40px", objectFit: "cover" }}
+                  />
+                ) : (
+                  "-"
+                )}
+              </td>
               <td>{v.TaiTrong}</td>
               <td>{v.TrangThai}</td>
               <td>{v.MoTa}</td>
@@ -247,7 +257,12 @@ const Vehicles: React.FC = () => {
 
             <input name="LoaiPhuongTien" value={form.LoaiPhuongTien} onChange={handleChange} placeholder="Loại xe" />
             <input name="BienSo" value={form.BienSo} onChange={handleChange} placeholder="Biển số" />
-            <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} placeholder="Hình ảnh" />
+            <select name="HinhAnh" value={form.HinhAnh} onChange={handleChange}>
+              <option value="">-- Chọn ảnh --</option>
+              <option value="xe1.jpg">Xe 1</option>
+              <option value="xe2.jpg">Xe 2</option>
+              <option value="xe3.jpg">Xe 3</option>
+            </select>
             <input name="TaiTrong" value={form.TaiTrong} onChange={handleChange} placeholder="Tải trọng" />
             <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
             <input name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
