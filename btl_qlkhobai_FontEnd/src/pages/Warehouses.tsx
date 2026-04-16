@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Warehouse {
@@ -11,9 +11,11 @@ interface Warehouse {
 }
 
 const Warehouses: React.FC = () => {
-
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [search, setSearch] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -27,24 +29,45 @@ const Warehouses: React.FC = () => {
     NhanVienQuanLy: ""
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/warehouse/warehouse");
-    const data = await res.json();
-    setWarehouses(data);
-  };
+  // ✅ giống Vehicles
+  const fetchWarehouses = useCallback(async (searchTerm: string = "") => {
+    try {
+      setLoading(true);
+
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/warehouse/warehouse/search?search=${encodeURIComponent(searchTerm)}`
+        : `http://localhost:5000/api/warehouse/warehouse`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải danh sách kho");
+
+      const data = await res.json();
+      setWarehouses(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchWarehouses();
+  }, [fetchWarehouses]);
+
+  // ✅ debounce giống Vehicles
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchWarehouses(search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [search, fetchWarehouses]);
 
   const formatID = (id: number) =>
     "WH" + id.toString().padStart(3, "0");
 
-  const filtered = warehouses.filter((w) =>
-    w.TenKho.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ giống Vehicles
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
@@ -71,53 +94,80 @@ const Warehouses: React.FC = () => {
     setSelected(item);
 
     setForm({
-      TenKho: item.TenKho,
-      SucChua: item.SucChua.toString(),
-      SoLuongContainer: item.SoLuongContainer.toString(),
-      DiaChi: item.DiaChi,
-      NhanVienQuanLy: item.NhanVienQuanLy
+      TenKho: item.TenKho || "",
+      SucChua: item.SucChua?.toString() || "",
+      SoLuongContainer: item.SoLuongContainer?.toString() || "",
+      DiaChi: item.DiaChi || "",
+      NhanVienQuanLy: item.NhanVienQuanLy || ""
     });
 
     setShowForm(true);
   };
 
+  // ✅ giống Vehicles (có validate + error)
   const handleSubmit = async () => {
-    const data = {
-      ...form,
-      SucChua: Number(form.SucChua),
-      SoLuongContainer: Number(form.SoLuongContainer)
-    };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/warehouse/warehouse/${selected.KhoID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/warehouse/warehouse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.TenKho) {
+      alert("Vui lòng nhập tên kho!");
+      return;
     }
 
-    setShowForm(false);
-    fetchData();
+    const payload = {
+      ...form,
+      SucChua: form.SucChua ? Number(form.SucChua) : 0,
+      SoLuongContainer: form.SoLuongContainer ? Number(form.SoLuongContainer) : 0
+    };
+
+    try {
+      let res: Response;
+
+      if (isEdit && selected) {
+        res = await fetch(
+          `http://localhost:5000/api/warehouse/warehouse/${selected.KhoID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }
+        );
+      } else {
+        res = await fetch("http://localhost:5000/api/warehouse/warehouse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Lỗi server");
+      }
+
+      alert(isEdit ? "Cập nhật thành công!" : "Thêm kho thành công!");
+      setShowForm(false);
+      fetchWarehouses(search);
+    } catch (err: any) {
+      alert("Lỗi: " + err.message);
+    }
   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}`, {
-      method: "DELETE"
-    });
+    try {
+      const res = await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}`, {
+        method: "DELETE"
+      });
 
-    fetchData();
+      if (!res.ok) throw new Error();
+
+      alert("Xóa thành công!");
+      fetchWarehouses(search);
+    } catch {
+      alert("Lỗi khi xóa");
+    }
   };
+
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
@@ -131,6 +181,7 @@ const Warehouses: React.FC = () => {
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
@@ -153,7 +204,7 @@ const Warehouses: React.FC = () => {
         </thead>
 
         <tbody>
-          {filtered.map((w) => (
+          {warehouses.map((w) => (
             <tr key={w.KhoID} onClick={() => handleOpenEdit(w)}>
               <td>{formatID(w.KhoID)}</td>
               <td>{w.TenKho}</td>
@@ -193,11 +244,11 @@ const Warehouses: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} kho</h3>
 
-            <input name="TenKho" placeholder="Tên kho" value={form.TenKho} onChange={handleChange} />
-            <input name="SucChua" placeholder="Sức chứa" value={form.SucChua} onChange={handleChange} />
-            <input name="SoLuongContainer" placeholder="Số lượng container" value={form.SoLuongContainer} onChange={handleChange} />
-            <input name="DiaChi" placeholder="Địa chỉ" value={form.DiaChi} onChange={handleChange} />
-            <input name="NhanVienQuanLy" placeholder="Quản lý" value={form.NhanVienQuanLy} onChange={handleChange} />
+            <input name="TenKho" value={form.TenKho} onChange={handleChange} placeholder="Tên kho" />
+            <input name="SucChua" value={form.SucChua} onChange={handleChange} placeholder="Sức chứa" />
+            <input name="SoLuongContainer" value={form.SoLuongContainer} onChange={handleChange} placeholder="Số lượng container" />
+            <input name="DiaChi" value={form.DiaChi} onChange={handleChange} placeholder="Địa chỉ" />
+            <input name="NhanVienQuanLy" value={form.NhanVienQuanLy} onChange={handleChange} placeholder="Quản lý" />
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>

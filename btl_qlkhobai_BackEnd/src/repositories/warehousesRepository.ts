@@ -4,7 +4,7 @@ import { poolPromise } from "../config/db";
 export const getAllWarehouse = async () => {
   const pool = await poolPromise;
   const result = await pool.request().query(`
-    SELECT * FROM KhoLT ORDER BY KhoID DESC
+    SELECT * FROM KhoLT ORDER BY KhoID ASC
   `);
   return result.recordset;
 };
