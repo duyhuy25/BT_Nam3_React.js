@@ -20,6 +20,7 @@ export const createContract = async (data: any) => {
     .query(`
       INSERT INTO HopDong 
       (KhachHangID, NgayKy, NgayHetHan, LoaiDichVu, GiaTri, TrangThai)
+      OUTPUT INSERTED.HopDongID
       VALUES (@KhachHangID, @NgayKy, @NgayHetHan, @LoaiDichVu, @GiaTri, @TrangThai)
     `);
 

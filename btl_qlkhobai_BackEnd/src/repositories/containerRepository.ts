@@ -14,7 +14,7 @@ export const getAllContainer = async () => {
 export const createContainer = async (data: any) => {
   const pool = await poolPromise;
 
-  await pool.request()
+  const result = await pool.request()
     .input("HopDongID", sql.Int, data.HopDongID)
     .input("LoaiHangID", sql.Int, data.LoaiHangID)
     .input("TrongLuong", sql.Decimal(10, 2), data.TrongLuong)
@@ -23,8 +23,10 @@ export const createContainer = async (data: any) => {
     .input("PhuongTienID", sql.Int, data.PhuongTienID || null) 
     .query(`
       INSERT INTO Container (HopDongID, LoaiHangID, TrongLuong, TrangThai, KhoID, PhuongTienID)
+      OUTPUT INSERTED.ContainerID
       VALUES (@HopDongID, @LoaiHangID, @TrongLuong, @TrangThai, @KhoID, @PhuongTienID)
     `);
+  return result;
 };
 
 export const updateContainer = async (id: number, data: any) => {

@@ -16,6 +16,15 @@ interface KhoOption { KhoID: number; TenKho: string; }
 interface PhuongTienOption { PhuongTienID: number; BienSo: string; }
 interface HopDongOption { HopDongID: number; MaHopDong?: string; TenKH?: string; }
 
+interface ContainerHistory {
+  LichSuID: number;
+  ContainerID: number;
+  ThoiGian: string;
+  HoatDong: string;
+  ViTri: string;
+  MaContainer: string;
+}
+
 const Containers: React.FC = () => {
   const [containers, setContainers] = useState<Container[]>([]);
   const [loaiHangs, setLoaiHangs] = useState<LoaiHangOption[]>([]);
@@ -30,6 +39,10 @@ const Containers: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<Container | null>(null);
+
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [expandedHistory, setExpandedHistory] = useState<ContainerHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [form, setForm] = useState({
     LoaiHangID: "", TrongLuong: "", TrangThai: "Rỗng",
@@ -103,6 +116,29 @@ const Containers: React.FC = () => {
       HopDongID: item.HopDongID.toString(),
     });
     setShowForm(true);
+  };
+
+  const handleToggleExpand = async (containerId: number) => {
+    if (expandedRowId === containerId) {
+      setExpandedRowId(null);
+      return;
+    }
+    setExpandedRowId(containerId);
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/containerhistory/containerhistory/search?search=${formatID(containerId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedHistory(data);
+      } else {
+        setExpandedHistory([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setExpandedHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -186,24 +222,59 @@ const Containers: React.FC = () => {
         </thead>
         <tbody>
           {containers.map((c) => (
-            <tr key={c.ContainerID} onClick={() => handleOpenEdit(c)}>
-              <td>{formatID(c.ContainerID)}</td>
-              <td>{loaiHangs.find(lh => lh.LoaiHangID === c.LoaiHangID)?.TenLoai || c.LoaiHangID}</td>
-              <td>{c.TrongLuong.toLocaleString("vi-VN")}</td>
-              <td>{c.TrangThai}</td>
-              <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
-              <td>{phuongTiens.find(pt => pt.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}</td>
-              <td>
-                {
-                  hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong 
-                  || formatContractID(c.HopDongID)
-                }
-              </td>              
-              <td>
-                <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
-                <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.ContainerID); }}>Xóa</button>
-              </td>
-            </tr>
+            <React.Fragment key={c.ContainerID}>
+              <tr onClick={() => handleToggleExpand(c.ContainerID)} style={{ cursor: "pointer" }}>
+                <td>{formatID(c.ContainerID)}</td>
+                <td>{loaiHangs.find(lh => lh.LoaiHangID === c.LoaiHangID)?.TenLoai || c.LoaiHangID}</td>
+                <td>{c.TrongLuong.toLocaleString("vi-VN")}</td>
+                <td>{c.TrangThai}</td>
+                <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
+                <td>{phuongTiens.find(pt => pt.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}</td>
+                <td>
+                  {
+                    hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong 
+                    || formatContractID(c.HopDongID)
+                  }
+                </td>              
+                <td>
+                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
+                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.ContainerID); }}>Xóa</button>
+                </td>
+              </tr>
+              {expandedRowId === c.ContainerID && (
+                <tr className="expanded-row" style={{ backgroundColor: "#f9f9f9" }}>
+                  <td colSpan={8} style={{ padding: 0 }}>
+                    <div style={{ padding: "15px", borderBottom: "1px solid #ddd" }}>
+                      <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>⏱ Lịch sử thay đổi: {formatID(c.ContainerID)}</h4>
+                      {loadingHistory ? (
+                        <p style={{ margin: 0 }}>Đang tải lịch sử...</p>
+                      ) : expandedHistory.length > 0 ? (
+                        <table style={{ background: "#fff", border: "1px solid #ccc", marginBottom: 0 }}>
+                           <thead>
+                             <tr style={{ background: "#eef2f5" }}>
+                               <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Thời gian</th>
+                               <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Hành động</th>
+                               <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Vị trí</th>
+                             </tr>
+                           </thead>
+                           <tbody>
+                             {expandedHistory.map((h, i) => (
+                               <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                                 <td style={{ padding: "8px" }}>{new Date(h.ThoiGian).toLocaleString("vi-VN")}</td>
+                                 <td style={{ padding: "8px" }}><span className={`badge ${h.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>{h.HoatDong}</span></td>
+                                 <td style={{ padding: "8px" }}>{h.ViTri || "-"}</td>
+                               </tr>
+                             ))}
+                           </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ fontStyle: "italic", margin: 0, color: "#666" }}>Chưa có lịch sử trạng thái con.</p>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
@@ -260,6 +331,7 @@ const Containers: React.FC = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

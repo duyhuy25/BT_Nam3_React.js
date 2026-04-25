@@ -10,8 +10,21 @@ export const fetchContract = async () => {
   return await getAllContract();
 };
 
+import { createInvoice } from "../repositories/invoiceRepositories";
+
 export const addContractService = async (data: any) => {
-  return await createContract(data);
+  const result = await createContract(data);
+  if (result.recordset && result.recordset.length > 0) {
+    const newHopDongID = result.recordset[0].HopDongID;
+    
+    await createInvoice({
+      HopDongID: newHopDongID,
+      SoTien: data.GiaTri || 0,
+      NgayLap: new Date(),
+      PhanTramDaThanhToan: 0
+    });
+  }
+  return result;
 };
 
 export const updateContractService = async (id: number, data: any) => {

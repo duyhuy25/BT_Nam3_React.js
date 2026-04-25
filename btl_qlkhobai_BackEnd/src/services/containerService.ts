@@ -10,8 +10,21 @@ export const fetchContainer = async () => {
   return await getAllContainer();
 };
 
+import { createHistory } from "../repositories/containerHistoryRepository";
+
 export const createContainerService = async (data: any) => {
-  return await createContainer(data);
+  const result = await createContainer(data);
+  if (result.recordset && result.recordset.length > 0) {
+    const newContainerID = result.recordset[0].ContainerID;
+    
+    await createHistory({
+      ContainerID: newContainerID,
+      ThoiGian: new Date(),
+      HoatDong: 'Tạo mới container',
+      ViTri: 'Chưa xác định'
+    });
+  }
+  return result;
 };
 
 export const updateContainerService = async (id: number, data: any) => {

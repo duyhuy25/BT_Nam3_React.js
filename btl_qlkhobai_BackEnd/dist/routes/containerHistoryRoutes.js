@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const containerHistoryController_1 = require("../controllers/containerHistoryController");
+const router = (0, express_1.Router)();
+router.get("/containerhistory", containerHistoryController_1.getContainerHistorys);
+router.get("/containerhistory/search", containerHistoryController_1.searchContainerHistory);
+router.post("/addcontainerhistory", containerHistoryController_1.addContainerHistory);
+router.put("/containerhistory/:id", containerHistoryController_1.updateContainerHistory);
+router.delete("/containerhistory/:id", containerHistoryController_1.deleteContainerHistory);
+exports.default = router;
