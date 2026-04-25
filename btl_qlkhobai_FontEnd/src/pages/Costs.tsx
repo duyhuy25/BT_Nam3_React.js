@@ -19,6 +19,7 @@ interface HopDongOption {
 interface ContainerOption {
   ContainerID: number;
   formattedID: string;
+  HopDongID?: number;
 }
 
 const Costs: React.FC = () => {
@@ -81,6 +82,7 @@ const Costs: React.FC = () => {
       const formatted = data.map((c: any) => ({
         ContainerID: c.ContainerID,
         formattedID: "CTN" + c.ContainerID.toString().padStart(3, "0"),
+        HopDongID: c.HopDongID,
       }));
 
       setContainers(formatted);
@@ -116,9 +118,23 @@ const Costs: React.FC = () => {
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    const { name, value } = e.target;
+
+    if (name === "ContainerID") {
+      const selectedContainer = containers.find(c => c.ContainerID.toString() === value);
+      if (selectedContainer && selectedContainer.HopDongID) {
+        setForm({
+          ...form,
+          [name]: value,
+          HopDongID: selectedContainer.HopDongID.toString()
+        });
+        return;
+      }
+    }
+
     setForm({
       ...form,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -298,11 +314,13 @@ const Costs: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa chi phí" : "➕ Thêm chi phí"}</h3>
 
-            <label>Hợp đồng *</label>
+            <label>Hợp đồng * {form.ContainerID && "(Tự động chốt theo Container)"}</label>
             <select
               name="HopDongID"
               value={form.HopDongID}
               onChange={handleChange}
+              disabled={!!form.ContainerID}
+              style={form.ContainerID ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
             >
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (

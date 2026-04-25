@@ -26,6 +26,14 @@ const createCost = async (data) => {
       INSERT INTO ChiPhi 
       (HopDongID, ContainerID, LoaiChiPhi, SoTien, ThuKhachHang)
       VALUES (@HopDongID, @ContainerID, @LoaiChiPhi, @SoTien, @ThuKhachHang)
+
+      -- Đồng bộ vào Hóa đơn
+      IF @HopDongID IS NOT NULL
+      BEGIN
+        UPDATE HoaDon 
+        SET SoTien = SoTien + @SoTien 
+        WHERE HopDongID = @HopDongID;
+      END
     `);
 };
 exports.createCost = createCost;
@@ -33,19 +41,38 @@ const updateCostById = async (id, data) => {
     const pool = await db_1.poolPromise;
     await pool.request()
         .input("ChiPhiID", id)
-        .input("HopDongID", data.HopDongID)
+        .input("NewHopDongID", data.HopDongID)
         .input("ContainerID", data.ContainerID)
         .input("LoaiChiPhi", data.LoaiChiPhi)
-        .input("SoTien", data.SoTien)
+        .input("NewSoTien", data.SoTien)
         .input("ThuKhachHang", data.ThuKhachHang)
         .query(`
+      DECLARE @OldHopDongID INT;
+      DECLARE @OldSoTien DECIMAL(15,2);
+      
+      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien 
+      FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
+
+      -- Trừ khoản cũ
+      IF @OldHopDongID IS NOT NULL
+      BEGIN
+        UPDATE HoaDon SET SoTien = SoTien - @OldSoTien WHERE HopDongID = @OldHopDongID;
+      END
+
+      -- Cập nhật bản ghi
       UPDATE ChiPhi SET
-        HopDongID = @HopDongID,
+        HopDongID = @NewHopDongID,
         ContainerID = @ContainerID,
         LoaiChiPhi = @LoaiChiPhi,
-        SoTien = @SoTien,
+        SoTien = @NewSoTien,
         ThuKhachHang = @ThuKhachHang
-      WHERE ChiPhiID = @ChiPhiID
+      WHERE ChiPhiID = @ChiPhiID;
+
+      -- Cộng khoản mới
+      IF @NewHopDongID IS NOT NULL
+      BEGIN
+        UPDATE HoaDon SET SoTien = SoTien + @NewSoTien WHERE HopDongID = @NewHopDongID;
+      END
     `);
 };
 exports.updateCostById = updateCostById;
@@ -53,7 +80,20 @@ const deleteCostById = async (id) => {
     const pool = await db_1.poolPromise;
     await pool.request()
         .input("ChiPhiID", id)
-        .query("DELETE FROM ChiPhi WHERE ChiPhiID = @ChiPhiID");
+        .query(`
+      DECLARE @OldHopDongID INT;
+      DECLARE @OldSoTien DECIMAL(15,2);
+      
+      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien 
+      FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
+
+      DELETE FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
+
+      IF @OldHopDongID IS NOT NULL
+      BEGIN
+        UPDATE HoaDon SET SoTien = SoTien - @OldSoTien WHERE HopDongID = @OldHopDongID;
+      END
+    `);
 };
 exports.deleteCostById = deleteCostById;
 const searchCostByKeyword = async (searchTerm = "") => {

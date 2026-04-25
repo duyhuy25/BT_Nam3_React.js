@@ -12,6 +12,7 @@ import contract from "./routes/contractRoutes"
 import cost from "./routes/costRoutes"
 import invoice from "./routes/invoiceRoutes"
 import user from "./routes/usersRoutes"
+import payment from "./routes/paymentRoutes"
 
 const app = express();
 
@@ -30,5 +31,6 @@ app.use("/api/contract", contract);
 app.use("/api/cost", cost);
 app.use("/api/invoice", invoice);
 app.use("/api/user", user);
+app.use("/api/payment", payment);
 
 export default app;
