@@ -23,6 +23,7 @@ const ContainerHistory: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<History | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     ContainerID: "",
@@ -44,8 +45,9 @@ const ContainerHistory: React.FC = () => {
       const cleanData = data.filter(
         (item: any) => item.LichSuID && item.ContainerID
       );
-      cleanData.sort((a: History, b: History) => a.LichSuID - b.LichSuID);
-      
+      // Sắp xếp mới nhất lên đầu
+      cleanData.sort((a: History, b: History) => b.LichSuID - a.LichSuID);
+
       setHistory(cleanData);
     } catch (err) {
       console.error("Error fetching history:", err);
@@ -111,34 +113,34 @@ const ContainerHistory: React.FC = () => {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc (*)");
       return;
     }
-  
+
     const body = {
       ...form,
       ContainerID: Number(form.ContainerID),
     };
-  
+
     try {
       const url = isEdit && selected
         ? `http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`
         : "http://localhost:5000/api/history/addcontainerhistory";
-  
+
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-  
+
       if (res.ok) {
         const data = await res.json();
         console.log("DATA RETURN:", data);
-  
+
         if (!data || !data.LichSuID || !data.ContainerID) {
           console.warn("Data không hợp lệ, reload lại");
-          fetchHistory(search); 
+          fetchHistory(search);
           setShowForm(false);
           return;
         }
-  
+
         if (isEdit && selected) {
           setHistory(prev =>
             prev.map(item =>
@@ -146,9 +148,9 @@ const ContainerHistory: React.FC = () => {
             )
           );
         } else {
-          setHistory(prev => [...prev, data]);
+          setHistory(prev => [data, ...prev]);
         }
-  
+
         setShowForm(false);
       } else {
         alert("Lỗi server khi lưu dữ liệu.");
@@ -169,6 +171,25 @@ const ContainerHistory: React.FC = () => {
       console.error("Delete error:", err);
     }
   };
+
+  const groupedHistoryEntries = React.useMemo(() => {
+    const groups: Record<number, History[]> = {};
+    history.forEach((h) => {
+      if (!groups[h.ContainerID]) groups[h.ContainerID] = [];
+      groups[h.ContainerID].push(h);
+    });
+
+    Object.values(groups).forEach((list) => {
+      list.sort((a, b) => {
+        const timeA = a.ThoiGian ? new Date(a.ThoiGian).getTime() : 0;
+        const timeB = b.ThoiGian ? new Date(b.ThoiGian).getTime() : 0;
+        if (timeA !== timeB) return timeA - timeB;
+        return a.LichSuID - b.LichSuID;
+      });
+    });
+
+    return Object.entries(groups).sort((a, b) => Number(b[0]) - Number(a[0]));
+  }, [history]);
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
 
@@ -193,52 +214,73 @@ const ContainerHistory: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Container</th>
-            <th>Hành động</th>
-            <th>Thời gian</th>
-            <th>Vị trí</th>
-            <th>Tác vụ</th>
+            <th>Trạng thái gần nhất</th>
+            <th>Cập nhật cuối</th>
+            <th>Vị trí hiện hành</th>
           </tr>
         </thead>
         <tbody>
-          {history.map((h) => (
-            <tr 
-              key={h.LichSuID} 
-              onClick={() => handleOpenEdit(h)} 
-              style={{ cursor: "pointer" }}
-            >
-              <td>{formatID(h.LichSuID)}</td>
-              <td>
-                {h.ContainerID
-                  ? "CTN" + h.ContainerID.toString().padStart(3, "0")
-                  : "CTN---"}
-              </td>              
-              <td>
-                <span className={`badge ${h.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>
-                  {h.HoatDong}
-                </span>
-              </td>
-              <td>
-                {h.ThoiGian
-                  ? new Date(h.ThoiGian).toLocaleString("vi-VN")
-                  : "-"}
-              </td>
-              <td>{h.ViTri || "-"}</td>
-              <td>
-                <button 
-                  className="btn-edit" 
-                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(h); }}
+          {groupedHistoryEntries.map(([containerIdStr, group], groupIndex) => {
+            const containerId = Number(containerIdStr);
+            const latest = group[group.length - 1];
+            const isExpanded = expandedRowId === containerId;
+
+            return (
+              <React.Fragment key={`group-${containerId}`}>
+                <tr
+                  onClick={() => setExpandedRowId(isExpanded ? null : containerId)}
+                  style={{ cursor: "pointer", background: isExpanded ? "#f0f8ff" : "inherit" }}
                 >
-                  Sửa
-                </button>
-                <button 
-                  className="btn-delete" 
-                  onClick={(e) => { e.stopPropagation(); handleDelete(h.LichSuID); }}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
+                  <td>
+                    <span style={{ marginRight: 8, fontSize: 12, color: '#666' }}>{isExpanded ? '▼' : '▶'}</span>
+                    {formatID(latest.LichSuID)}
+                  </td>
+                  <td>CTN{containerId.toString().padStart(3, "0")}</td>
+                  <td>
+                    <span className={`badge ${latest.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>
+                      {latest.HoatDong}
+                    </span>
+                  </td>
+                  <td>{latest.ThoiGian ? new Date(latest.ThoiGian).toLocaleString("vi-VN") : "-"}</td>
+                  <td>{latest.ViTri || "-"}</td>
+                </tr>
+                {isExpanded && (
+                  <tr className="expanded-row" style={{ backgroundColor: "#f9f9f9" }}>
+                    <td colSpan={5} style={{ padding: 0 }}>
+                      <div style={{ padding: "15px", borderBottom: "1px solid #ddd" }}>
+                        <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>⏱ Lịch sử cập nhật: CTN{containerId.toString().padStart(3, "0")}</h4>
+                        <table style={{ background: "#fff", border: "1px solid #ccc", marginBottom: 0 }}>
+                          <thead>
+                            <tr style={{ background: "#eef2f5" }}>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc", width: "60px", textAlign: 'center' }}>STT</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Hành động</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Thời gian</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Vị trí</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc", width: "120px" }}>Tác vụ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.map((h, i) => (
+                              <tr key={h.LichSuID} style={{ borderBottom: "1px solid #eee" }}>
+                                <td style={{ padding: "8px", textAlign: 'center', fontWeight: 'bold' }}>{i + 1}</td>
+                                <td style={{ padding: "8px" }}><span className={`badge ${h.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>{h.HoatDong}</span></td>
+                                <td style={{ padding: "8px" }}>{h.ThoiGian ? new Date(h.ThoiGian).toLocaleString("vi-VN") : "-"}</td>
+                                <td style={{ padding: "8px" }}>{h.ViTri || "-"}</td>
+                                <td style={{ padding: "8px" }}>
+                                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(h); }}>Sửa</button>
+                                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(h.LichSuID); }}>Xóa</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
 
@@ -246,7 +288,7 @@ const ContainerHistory: React.FC = () => {
         <div className="modal">
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Cập nhật Lịch Sử" : "➕ Thêm Lịch Sử Mới"}</h3>
-            
+
             <div className="form-group">
               <label>Container *</label>
               <select name="ContainerID" value={form.ContainerID} onChange={handleChange}>
@@ -275,11 +317,11 @@ const ContainerHistory: React.FC = () => {
 
             <div className="form-group">
               <label>Vị trí</label>
-              <input 
-                name="ViTri" 
-                placeholder="VD: Cảng Cát Lái, Kho A1..." 
-                value={form.ViTri} 
-                onChange={handleChange} 
+              <input
+                name="ViTri"
+                placeholder="VD: Cảng Cát Lái, Kho A1..."
+                value={form.ViTri}
+                onChange={handleChange}
               />
             </div>
 
