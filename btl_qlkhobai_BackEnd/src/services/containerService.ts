@@ -92,6 +92,19 @@ export const updateContainerService = async (id: number, data: any) => {
     if (vehicle && vehicle.TrangThai !== 'Đang chạy') {
       await updateVehicleById(data.PhuongTienID, { ...vehicle, TrangThai: 'Đang chạy' });
     }
+  } else if (data.TrangThai === 'Đã giao' && data.PhuongTienID) {
+    const trips = await getAllTrip();
+    // Find the active trip for this vehicle
+    const targetTrip = trips.find((t: any) => t.PhuongTienID === data.PhuongTienID && t.TrangThai === 'Đang chạy');
+    if (targetTrip) {
+      await updateTripById(targetTrip.ChuyenDiID, { ...targetTrip, TrangThai: 'Hoàn thành' });
+    }
+
+    // Reset Vehicle to 'Sẵn sàng'
+    const vehicle = await getVehicleById(data.PhuongTienID);
+    if (vehicle) {
+      await updateVehicleById(data.PhuongTienID, { ...vehicle, TrangThai: 'Sẵn sàng' });
+    }
   }
 
   return await updateContainer(id, data);

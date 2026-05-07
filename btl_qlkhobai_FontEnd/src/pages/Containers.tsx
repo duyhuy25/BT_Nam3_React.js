@@ -13,7 +13,7 @@ interface Container {
 
 interface LoaiHangOption { LoaiHangID: number; TenLoai: string; }
 interface KhoOption { KhoID: number; TenKho: string; }
-interface PhuongTienOption { PhuongTienID: number; BienSo: string; }
+interface PhuongTienOption { PhuongTienID: number; BienSo: string; TrangThai: string; }
 interface HopDongOption { HopDongID: number; MaHopDong?: string; TenKH?: string; }
 interface TripOption { ChuyenDiID: number; MaChuyen: string; PhuongTienID: number; TrangThai: string; BienSo?: string; }
 
@@ -30,6 +30,7 @@ const Containers: React.FC = () => {
   const [showTripActionModal, setShowTripActionModal] = useState(false);
   const [actionContainer, setActionContainer] = useState<Container | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<string>("");
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -163,6 +164,7 @@ const Containers: React.FC = () => {
     if (newStatus === "Đã phân công") {
       setActionContainer(container);
       setSelectedActionId("");
+      setSelectedVehicleId("");
       setShowTripActionModal(true);
       return;
     }
@@ -217,15 +219,26 @@ const Containers: React.FC = () => {
   };
 
   const handleConfirmTrip = async () => {
-    if (!actionContainer || !selectedActionId) return;
+    if (!actionContainer || !selectedActionId || !selectedVehicleId) return;
 
     const selectedTrip = trips.find(t => t.ChuyenDiID === Number(selectedActionId));
     if (!selectedTrip) return;
 
+    // Update Trip with selected vehicle if changed
+    if (selectedTrip.PhuongTienID !== Number(selectedVehicleId)) {
+      try {
+        await fetch(`http://localhost:5000/api/trip/trip/${selectedTrip.ChuyenDiID}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...selectedTrip, PhuongTienID: Number(selectedVehicleId) }),
+        });
+      } catch (err) { console.error("Error updating trip vehicle:", err); }
+    }
+
     const body = {
       ...actionContainer,
       TrangThai: "Đã phân công",
-      PhuongTienID: selectedTrip.PhuongTienID,
+      PhuongTienID: Number(selectedVehicleId),
     };
 
     try {
@@ -455,19 +468,44 @@ const Containers: React.FC = () => {
       {showTripActionModal && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Phân công chuyến đi</h3>
-            <label>Chọn chuyến đi (Trạng thái: Chuẩn bị) *</label>
-            <select value={selectedActionId} onChange={(e) => setSelectedActionId(e.target.value)}>
+            <h3>Phân công chuyến đi & Phương tiện</h3>
+            
+            <label>1. Chọn chuyến đi (Trạng thái: Chuẩn bị) *</label>
+            <select 
+              value={selectedActionId} 
+              onChange={(e) => {
+                const tripId = e.target.value;
+                setSelectedActionId(tripId);
+                const trip = trips.find(t => t.ChuyenDiID === Number(tripId));
+                if (trip) setSelectedVehicleId(trip.PhuongTienID.toString());
+              }}
+            >
               <option value="">-- Chọn chuyến --</option>
               {trips
                 .filter(t => t.TrangThai === "Chuẩn bị")
                 .map(t => (
                   <option key={t.ChuyenDiID} value={t.ChuyenDiID}>
-                    {t.MaChuyen} - {t.BienSo || `ID: ${t.PhuongTienID}`}
+                    {t.MaChuyen} (Hiện tại: {phuongTiens.find(p => p.PhuongTienID === t.PhuongTienID)?.BienSo || "Chưa có xe"})
                   </option>
                 ))}
             </select>
-            <div className="modal-actions">
+
+            <label style={{ marginTop: '15px' }}>2. Chọn phương tiện (Chỉ xe Sẵn sàng) *</label>
+            <select 
+              value={selectedVehicleId} 
+              onChange={(e) => setSelectedVehicleId(e.target.value)}
+            >
+              <option value="">-- Chọn xe --</option>
+              {phuongTiens
+                .filter(p => p.TrangThai === "Sẵn sàng" || (selectedActionId && p.PhuongTienID === trips.find(t => t.ChuyenDiID === Number(selectedActionId))?.PhuongTienID))
+                .map(p => (
+                  <option key={p.PhuongTienID} value={p.PhuongTienID}>
+                    {p.BienSo} ({p.TrangThai})
+                  </option>
+                ))}
+            </select>
+
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
               <button className="btn-submit" onClick={handleConfirmTrip}>Xác nhận</button>
               <button className="btn-cancel" onClick={() => setShowTripActionModal(false)}>Hủy</button>
             </div>

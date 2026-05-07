@@ -1,6 +1,17 @@
 import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
+interface Port {
+  CangID: number;
+  TenCang: string;
+}
+
+interface Vehicle {
+  PhuongTienID: number;
+  BienSo: string;
+  TrangThai: string;
+}
+
 interface Trip {
   ChuyenDiID: number;
   MaChuyen: string;
@@ -14,6 +25,8 @@ interface Trip {
 
 const Trips: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [ports, setPorts] = useState<Port[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -55,6 +68,18 @@ const Trips: React.FC = () => {
 
   useEffect(() => {
     fetchTrips();
+    
+    // Fetch Ports
+    fetch("http://localhost:5000/api/port/port")
+      .then(res => res.json())
+      .then(data => setPorts(data))
+      .catch(err => console.error("Error fetching ports:", err));
+
+    // Fetch Vehicles
+    fetch("http://localhost:5000/api/vehicle/vehicle")
+      .then(res => res.json())
+      .then(data => setVehicles(data))
+      .catch(err => console.error("Error fetching vehicles:", err));
   }, [fetchTrips]);
 
   useEffect(() => {
@@ -193,11 +218,11 @@ const Trips: React.FC = () => {
             <tr key={t.ChuyenDiID} onClick={() => handleOpenEdit(t)}>
               <td>{formatID(t.ChuyenDiID)}</td>
               <td>{t.MaChuyen}</td>
-              <td>{t.CangDiID}</td>
-              <td>{t.CangDenID}</td>
+              <td>{ports.find(p => p.CangID === Number(t.CangDiID))?.TenCang || t.CangDiID}</td>
+              <td>{ports.find(p => p.CangID === Number(t.CangDenID))?.TenCang || t.CangDenID}</td>
               <td>{t.NgayKhoiHanh ? new Date(t.NgayKhoiHanh).toLocaleDateString("vi-VN") : "-"}</td>
               <td>{t.NgayDuKienDen ? new Date(t.NgayDuKienDen).toLocaleDateString("vi-VN") : "-"}</td>
-              <td>{t.PhuongTienID}</td>
+              <td>{vehicles.find(v => v.PhuongTienID === Number(t.PhuongTienID))?.BienSo || t.PhuongTienID}</td>
               <td>{t.TrangThai}</td>
 
               <td>
@@ -231,14 +256,38 @@ const Trips: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} chuyến đi</h3>
 
+            <label>Mã chuyến</label>
             <input name="MaChuyen" value={form.MaChuyen} onChange={handleChange} placeholder="Mã chuyến" />
-            <input name="CangDiID" value={form.CangDiID} onChange={handleChange} placeholder="Cảng đi" />
-            <input name="CangDenID" value={form.CangDenID} onChange={handleChange} placeholder="Cảng đến" />
 
+            <label>Cảng đi</label>
+            <select name="CangDiID" value={form.CangDiID} onChange={handleChange}>
+              <option value="">-- Chọn cảng đi --</option>
+              {ports.map(p => <option key={p.CangID} value={p.CangID}>{p.TenCang}</option>)}
+            </select>
+
+            <label>Cảng đến</label>
+            <select name="CangDenID" value={form.CangDenID} onChange={handleChange}>
+              <option value="">-- Chọn cảng đến --</option>
+              {ports.map(p => <option key={p.CangID} value={p.CangID}>{p.TenCang}</option>)}
+            </select>
+
+            <label>ETD (Ngày khởi hành)</label>
             <input type="date" name="NgayKhoiHanh" value={form.NgayKhoiHanh} onChange={handleChange} />
+            
+            <label>ETA (Ngày dự kiến đến)</label>
             <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
 
-            <input name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange} placeholder="Phương tiện" />
+            <label>Phương tiện (Chỉ xe Sẵn sàng)</label>
+            <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
+              <option value="">-- Chọn phương tiện --</option>
+              {vehicles
+                .filter(v => v.TrangThai === "Sẵn sàng" || (isEdit && v.PhuongTienID === Number(selected?.PhuongTienID)))
+                .map(v => (
+                  <option key={v.PhuongTienID} value={v.PhuongTienID}>
+                    {v.BienSo} ({v.TrangThai})
+                  </option>
+                ))}
+            </select>
             <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="">-- Chọn --</option>

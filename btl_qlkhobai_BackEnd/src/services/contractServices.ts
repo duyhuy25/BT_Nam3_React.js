@@ -27,21 +27,14 @@ export const addContractService = async (data: any) => {
       PhanTramDaThanhToan: 0
     });
 
-    // Auto-create container and assign vehicle if available
-    const readyVehicle = await getReadyVehicle();
-    
+    // Auto-create container without fixed vehicle assignment
     await createContainer({
       HopDongID: newHopDongID,
-      LoaiHangID: 1, // Default or pick first from DB if possible
+      LoaiHangID: 1, // Default
       TrongLuong: 0,
       TrangThai: "Rỗng",
-      PhuongTienID: readyVehicle ? readyVehicle.PhuongTienID : null
+      PhuongTienID: null
     });
-
-    // We can return the vehicle info to notify frontend if needed
-    if (!readyVehicle) {
-      (result as any).message = "Hợp đồng đã tạo, nhưng không có xe rảnh để gán cho container.";
-    }
   }
   return result;
 };
