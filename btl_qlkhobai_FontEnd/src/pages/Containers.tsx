@@ -15,6 +15,7 @@ interface LoaiHangOption { LoaiHangID: number; TenLoai: string; }
 interface KhoOption { KhoID: number; TenKho: string; }
 interface PhuongTienOption { PhuongTienID: number; BienSo: string; }
 interface HopDongOption { HopDongID: number; MaHopDong?: string; TenKH?: string; }
+interface TripOption { ChuyenDiID: number; MaChuyen: string; PhuongTienID: number; TrangThai: string; BienSo?: string; }
 
 
 const Containers: React.FC = () => {
@@ -23,6 +24,12 @@ const Containers: React.FC = () => {
   const [khos, setKhos] = useState<KhoOption[]>([]);
   const [phuongTiens, setPhuongTiens] = useState<PhuongTienOption[]>([]);
   const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
+  const [trips, setTrips] = useState<TripOption[]>([]);
+
+  const [showWarehouseActionModal, setShowWarehouseActionModal] = useState(false);
+  const [showTripActionModal, setShowTripActionModal] = useState(false);
+  const [actionContainer, setActionContainer] = useState<Container | null>(null);
+  const [selectedActionId, setSelectedActionId] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,13 +63,14 @@ const Containers: React.FC = () => {
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [lh, k, pt, hd] = await Promise.all([
+      const [lh, k, pt, hd, t] = await Promise.all([
         fetch("http://localhost:5000/api/itemtype/itemtype").then(res => res.json()),
         fetch("http://localhost:5000/api/warehouse/warehouse").then(res => res.json()),
         fetch("http://localhost:5000/api/vehicle/vehicle").then(res => res.json()),
-        fetch("http://localhost:5000/api/contract/contract").then(res => res.json())
+        fetch("http://localhost:5000/api/contract/contract").then(res => res.json()),
+        fetch("http://localhost:5000/api/trip/trip").then(res => res.json())
       ]);
-      setLoaiHangs(lh); setKhos(k); setPhuongTiens(pt); setHopDongs(hd);
+      setLoaiHangs(lh); setKhos(k); setPhuongTiens(pt); setHopDongs(hd); setTrips(t);
     } catch (err) {
       console.error("Error fetching options:", err);
     }
@@ -145,6 +153,98 @@ const Containers: React.FC = () => {
     }
   };
 
+  const handleUpdateStatus = async (container: Container, newStatus: string) => {
+    if (newStatus === "Trong kho") {
+      setActionContainer(container);
+      setSelectedActionId("");
+      setShowWarehouseActionModal(true);
+      return;
+    }
+    if (newStatus === "Đã phân công") {
+      setActionContainer(container);
+      setSelectedActionId("");
+      setShowTripActionModal(true);
+      return;
+    }
+
+    const body = {
+      ...container,
+      TrangThai: newStatus,
+    };
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/container/container/${container.ContainerID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        fetchContainers(search);
+        fetchOptions(); // Refresh warehouse counts
+      } else {
+        alert("Lỗi khi cập nhật trạng thái");
+      }
+    } catch (err) {
+      console.error("Update status error:", err);
+    }
+  };
+
+  const handleConfirmWarehouse = async () => {
+    if (!actionContainer || !selectedActionId) return;
+
+    const body = {
+      ...actionContainer,
+      TrangThai: "Trong kho",
+      KhoID: Number(selectedActionId),
+    };
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/container/container/${actionContainer.ContainerID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        setShowWarehouseActionModal(false);
+        fetchContainers(search);
+        fetchOptions();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleConfirmTrip = async () => {
+    if (!actionContainer || !selectedActionId) return;
+
+    const selectedTrip = trips.find(t => t.ChuyenDiID === Number(selectedActionId));
+    if (!selectedTrip) return;
+
+    const body = {
+      ...actionContainer,
+      TrangThai: "Đã phân công",
+      PhuongTienID: selectedTrip.PhuongTienID,
+    };
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/container/container/${actionContainer.ContainerID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        setShowTripActionModal(false);
+        fetchContainers(search);
+        fetchOptions();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa container này?")) return;
     try {
@@ -184,6 +284,7 @@ const Containers: React.FC = () => {
             <th>Kho</th>
             <th>Phương tiện</th>
             <th>Hợp đồng</th>
+            <th style={{ background: '#007bff', color: '#fff', textAlign: 'center' }}>Điều phối</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -202,6 +303,72 @@ const Containers: React.FC = () => {
                   || formatContractID(c.HopDongID)
                 }
               </td>              
+              <td style={{ textAlign: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
+                  {c.TrangThai === "Rỗng" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đang đóng hàng")}
+                      style={{ background: '#3498db', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Bắt đầu đóng hàng
+                    </button>
+                  )}
+                  {c.TrangThai === "Đang đóng hàng" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đã đóng hàng")}
+                      style={{ background: '#2980b9', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Hoàn tất đóng hàng
+                    </button>
+                  )}
+                  {c.TrangThai === "Đã đóng hàng" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Trong kho")}
+                      style={{ background: '#8e44ad', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Nhập kho
+                    </button>
+                  )}
+                  {c.TrangThai === "Trong kho" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đã phân công")}
+                      style={{ background: '#f39c12', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Phân công chuyến
+                    </button>
+                  )}
+                  {c.TrangThai === "Đã phân công" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đang vận chuyển")}
+                      style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Bắt đầu vận chuyển
+                    </button>
+                  )}
+                  {c.TrangThai === "Đang vận chuyển" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đã đến nơi")}
+                      style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Đã đến nơi
+                    </button>
+                  )}
+                  {c.TrangThai === "Đã đến nơi" && (
+                    <button 
+                      onClick={() => handleUpdateStatus(c, "Đã giao")}
+                      style={{ background: '#2ecc71', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
+                    >
+                      Giao hàng xong
+                    </button>
+                  )}
+                  {c.TrangThai === "Đã giao" && (
+                    <span style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '12px' }}>Hoàn thành ✓</span>
+                  )}
+                  {c.TrangThai === "Hỏng" && (
+                    <span style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: '12px' }}>Đã hỏng</span>
+                  )}
+                </div>
+              </td>
               <td>
                 <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
                 <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.ContainerID); }}>Xóa</button>
@@ -228,8 +395,12 @@ const Containers: React.FC = () => {
             <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="Rỗng">Rỗng</option>
-              <option value="Đầy">Đầy</option>
+              <option value="Đang đóng hàng">Đang đóng hàng</option>
+              <option value="Đã đóng hàng">Đã đóng hàng</option>
+              <option value="Trong kho">Trong kho</option>
+              <option value="Đã phân công">Đã phân công</option>
               <option value="Đang vận chuyển">Đang vận chuyển</option>
+              <option value="Đã đến nơi">Đã đến nơi</option>
               <option value="Đã giao">Đã giao</option>
               <option value="Hỏng">Hỏng</option>
             </select>
@@ -259,6 +430,46 @@ const Containers: React.FC = () => {
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>Lưu</button>
               <button className="btn-cancel" onClick={() => setShowForm(false)}>Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWarehouseActionModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Chọn kho lưu trữ</h3>
+            <label>Danh sách kho *</label>
+            <select value={selectedActionId} onChange={(e) => setSelectedActionId(e.target.value)}>
+              <option value="">-- Chọn kho --</option>
+              {khos.map(k => <option key={k.KhoID} value={k.KhoID}>{k.TenKho}</option>)}
+            </select>
+            <div className="modal-actions">
+              <button className="btn-submit" onClick={handleConfirmWarehouse}>Xác nhận</button>
+              <button className="btn-cancel" onClick={() => setShowWarehouseActionModal(false)}>Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTripActionModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Phân công chuyến đi</h3>
+            <label>Chọn chuyến đi (Trạng thái: Chuẩn bị) *</label>
+            <select value={selectedActionId} onChange={(e) => setSelectedActionId(e.target.value)}>
+              <option value="">-- Chọn chuyến --</option>
+              {trips
+                .filter(t => t.TrangThai === "Chuẩn bị")
+                .map(t => (
+                  <option key={t.ChuyenDiID} value={t.ChuyenDiID}>
+                    {t.MaChuyen} - {t.BienSo || `ID: ${t.PhuongTienID}`}
+                  </option>
+                ))}
+            </select>
+            <div className="modal-actions">
+              <button className="btn-submit" onClick={handleConfirmTrip}>Xác nhận</button>
+              <button className="btn-cancel" onClick={() => setShowTripActionModal(false)}>Hủy</button>
             </div>
           </div>
         </div>

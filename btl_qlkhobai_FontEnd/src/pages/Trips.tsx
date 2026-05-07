@@ -239,7 +239,15 @@ const Trips: React.FC = () => {
             <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
 
             <input name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange} placeholder="Phương tiện" />
-            <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
+            <label>Trạng thái</label>
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="">-- Chọn --</option>
+              <option value="Chuẩn bị">Chuẩn bị</option>
+              <option value="Đã phân công">Đã phân công</option>
+              <option value="Đang chạy">Đang chạy</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+              <option value="Hủy">Hủy</option>
+            </select>
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>

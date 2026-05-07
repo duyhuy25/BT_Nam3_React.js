@@ -264,7 +264,14 @@ const Vehicles: React.FC = () => {
               <option value="xe3.jpg">Xe 3</option>
             </select>
             <input name="TaiTrong" value={form.TaiTrong} onChange={handleChange} placeholder="Tải trọng" />
-            <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
+            <label>Trạng thái</label>
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="">-- Chọn --</option>
+              <option value="Sẵn sàng">Sẵn sàng</option>
+              <option value="Đang chạy">Đang chạy</option>
+              <option value="Bảo trì">Bảo trì</option>
+              <option value="Hỏng">Hỏng</option>
+            </select>
             <input name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
 
             <div className="modal-actions">

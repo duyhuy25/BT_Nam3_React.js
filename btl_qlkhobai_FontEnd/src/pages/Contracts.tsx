@@ -164,12 +164,15 @@ const Contracts: React.FC = () => {
             body: JSON.stringify(body),
           }
         );
+        alert("Cập nhật thành công");
       } else {
-        await fetch("http://localhost:5000/api/contract/addcontract", {
+        const res = await fetch("http://localhost:5000/api/contract/addcontract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
+        const data = await res.json();
+        alert(data.message || "Thêm thành công");
       }
 
       setShowForm(false);

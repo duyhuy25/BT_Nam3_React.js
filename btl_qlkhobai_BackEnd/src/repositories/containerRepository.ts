@@ -7,8 +7,15 @@ export const getAllContainer = async () => {
   const result = await pool
     .request()
     .query("SELECT * FROM Container");
-
   return result.recordset;
+};
+
+export const getContainerById = async (id: number) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("ContainerID", sql.Int, id)
+    .query("SELECT * FROM Container WHERE ContainerID = @ContainerID");
+  return result.recordset[0] || null;
 };
 
 export const createContainer = async (data: any) => {

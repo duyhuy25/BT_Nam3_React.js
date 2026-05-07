@@ -9,6 +9,24 @@ export const getAllVehicle = async () => {
   return result.recordset;
 };
 
+export const getVehicleById = async (id: number) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("PhuongTienID", sql.Int, id)
+    .query("SELECT * FROM PhuongTien WHERE PhuongTienID = @PhuongTienID");
+  return result.recordset[0] || null;
+};
+
+export const getReadyVehicle = async () => {
+  const pool = await poolPromise;
+  const result = await pool.request().query(`
+    SELECT TOP 1 * FROM PhuongTien 
+    WHERE TrangThai = N'Sẵn sàng' 
+    ORDER BY PhuongTienID ASC
+  `);
+  return result.recordset[0] || null;
+};
+
 export const createVehicle = async (data: any) => {
   const pool = await poolPromise;
 
@@ -17,7 +35,7 @@ export const createVehicle = async (data: any) => {
     .input("BienSo", sql.NVarChar(20), data.BienSo)
     .input("HinhAnh", sql.NVarChar(255), data.HinhAnh)
     .input("TaiTrong", sql.Decimal(10,2), data.TaiTrong)
-    .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Hoạt động")
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Sẵn sàng")
     .input("MoTa", sql.NVarChar(500), data.MoTa)
     .query(`
       INSERT INTO PhuongTien

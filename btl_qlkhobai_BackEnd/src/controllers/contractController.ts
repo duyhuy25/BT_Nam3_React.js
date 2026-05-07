@@ -19,8 +19,8 @@ export const getContracts = async (req: Request, res: Response) => {
 
 export const addContract = async (req: Request, res: Response) => {
   try {
-    await addContractService(req.body);
-    res.json({ message: "Thêm hợp đồng thành công" });
+    const result = await addContractService(req.body);
+    res.json({ message: (result as any).message || "Thêm hợp đồng thành công" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi server" });
