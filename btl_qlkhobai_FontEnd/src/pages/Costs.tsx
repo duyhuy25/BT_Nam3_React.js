@@ -120,16 +120,13 @@ const Costs: React.FC = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "ContainerID") {
-      const selectedContainer = containers.find(c => c.ContainerID.toString() === value);
-      if (selectedContainer && selectedContainer.HopDongID) {
-        setForm({
-          ...form,
-          [name]: value,
-          HopDongID: selectedContainer.HopDongID.toString()
-        });
-        return;
-      }
+    if (name === "HopDongID") {
+      setForm({
+        ...form,
+        [name]: value,
+        ContainerID: "" // Reset container if contract changes
+      });
+      return;
     }
 
     setForm({
@@ -274,8 +271,8 @@ const Costs: React.FC = () => {
                 <td>{formatID(c.ChiPhiID)}</td>
                 <td>
                   {hd
-                    ? hd.MaHopDong || `HD${hd.HopDongID}`
-                    : c.HopDongID}
+                    ? hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}`
+                    : `HD${c.HopDongID.toString().padStart(3, "0")}`}
                 </td>
                 <td>{ct ? ct.formattedID : "-"}</td>
                 <td>{c.LoaiChiPhi}</td>
@@ -314,18 +311,16 @@ const Costs: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa chi phí" : "➕ Thêm chi phí"}</h3>
 
-            <label>Hợp đồng * {form.ContainerID && "(Tự động chốt theo Container)"}</label>
+            <label>Hợp đồng *</label>
             <select
               name="HopDongID"
               value={form.HopDongID}
               onChange={handleChange}
-              disabled={!!form.ContainerID}
-              style={form.ContainerID ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
             >
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (
                 <option key={hd.HopDongID} value={hd.HopDongID}>
-                  {hd.MaHopDong || `HD${hd.HopDongID}`}
+                  {hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}`}
                 </option>
               ))}
             </select>
@@ -335,9 +330,13 @@ const Costs: React.FC = () => {
               name="ContainerID"
               value={form.ContainerID}
               onChange={handleChange}
+              disabled={!form.HopDongID}
+              style={!form.HopDongID ? { backgroundColor: '#f0f0f0', cursor: 'not-allowed' } : {}}
             >
-              <option value="">-- Không chọn --</option>
-              {containers.map((ct) => (
+              <option value="">-- {form.HopDongID ? "Không chọn" : "Vui lòng chọn Hợp đồng trước"} --</option>
+              {containers
+                .filter(ct => ct.HopDongID?.toString() === form.HopDongID)
+                .map((ct) => (
                 <option key={ct.ContainerID} value={ct.ContainerID}>
                   {ct.formattedID}
                 </option>

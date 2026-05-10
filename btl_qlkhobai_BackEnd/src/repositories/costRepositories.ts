@@ -26,7 +26,7 @@ export const createCost = async (data: any) => {
       VALUES (@HopDongID, @ContainerID, @LoaiChiPhi, @SoTien, @ThuKhachHang)
 
       -- Đồng bộ vào Hóa đơn
-      IF @HopDongID IS NOT NULL
+      IF @HopDongID IS NOT NULL AND @ThuKhachHang = N'Có'
       BEGIN
         UPDATE HoaDon 
         SET SoTien = SoTien + @SoTien 
@@ -48,12 +48,13 @@ export const updateCostById = async (id: number, data: any) => {
     .query(`
       DECLARE @OldHopDongID INT;
       DECLARE @OldSoTien DECIMAL(15,2);
+      DECLARE @OldThuKhachHang NVARCHAR(50);
       
-      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien 
+      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien, @OldThuKhachHang = ThuKhachHang
       FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
 
       -- Trừ khoản cũ
-      IF @OldHopDongID IS NOT NULL
+      IF @OldHopDongID IS NOT NULL AND @OldThuKhachHang = N'Có'
       BEGIN
         UPDATE HoaDon SET SoTien = SoTien - @OldSoTien WHERE HopDongID = @OldHopDongID;
       END
@@ -68,7 +69,7 @@ export const updateCostById = async (id: number, data: any) => {
       WHERE ChiPhiID = @ChiPhiID;
 
       -- Cộng khoản mới
-      IF @NewHopDongID IS NOT NULL
+      IF @NewHopDongID IS NOT NULL AND @ThuKhachHang = N'Có'
       BEGIN
         UPDATE HoaDon SET SoTien = SoTien + @NewSoTien WHERE HopDongID = @NewHopDongID;
       END
@@ -83,13 +84,14 @@ export const deleteCostById = async (id: number) => {
     .query(`
       DECLARE @OldHopDongID INT;
       DECLARE @OldSoTien DECIMAL(15,2);
+      DECLARE @OldThuKhachHang NVARCHAR(50);
       
-      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien 
+      SELECT @OldHopDongID = HopDongID, @OldSoTien = SoTien, @OldThuKhachHang = ThuKhachHang 
       FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
 
       DELETE FROM ChiPhi WHERE ChiPhiID = @ChiPhiID;
 
-      IF @OldHopDongID IS NOT NULL
+      IF @OldHopDongID IS NOT NULL AND @OldThuKhachHang = N'Có'
       BEGIN
         UPDATE HoaDon SET SoTien = SoTien - @OldSoTien WHERE HopDongID = @OldHopDongID;
       END

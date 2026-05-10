@@ -103,3 +103,18 @@ export const searchUserByKeyword = async (searchTerm: string = "") => {
   const result = await request.query(query);
   return result.recordset;
 };
+
+export const findUserByUsername = async (username: string) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("Username", sql.NVarChar(50), username)
+    .query(`
+      SELECT 
+        u.*, 
+        v.TenVaiTro 
+      FROM Users u
+      LEFT JOIN VaiTro v ON u.RoleID = v.RoleID
+      WHERE u.Username = @Username
+    `);
+  return result.recordset[0];
+};

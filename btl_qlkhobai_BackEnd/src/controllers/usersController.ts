@@ -5,6 +5,7 @@ import {
   updateUserService,
   deleteUserService,
   searchUsersService,
+  loginService,
 } from "../services/usersServices";
 
 export const getUser = async (req: Request, res: Response) => {
@@ -65,5 +66,16 @@ export const searchUser = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Error searching users:", error);
     res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    const user = await loginService(username, password);
+    res.json(user);
+  } catch (error: any) {
+    console.error("Login error:", error.message);
+    res.status(401).json({ message: error.message });
   }
 };

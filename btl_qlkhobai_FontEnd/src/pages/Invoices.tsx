@@ -367,7 +367,7 @@ const Invoices: React.FC = () => {
               <tr key={i.HoaDonID}>
                 <td style={{ verticalAlign: 'top', paddingTop: '15px' }}>{formatID(i.HoaDonID)}</td>
                 <td style={{ verticalAlign: 'top', paddingTop: '15px' }}>
-                  {hd ? hd.MaHopDong || `HD${hd.HopDongID}` : i.HopDongID}
+                  {hd ? hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}` : `HD${i.HopDongID.toString().padStart(3, "0")}`}
                 </td>
                 <td style={{ verticalAlign: 'top', paddingTop: '15px', fontWeight: 'bold' }}>
                   {formatCurrency(i.SoTien)}
@@ -447,7 +447,7 @@ const Invoices: React.FC = () => {
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (
                 <option key={hd.HopDongID} value={hd.HopDongID}>
-                  {hd.MaHopDong || `HD${hd.HopDongID}`}
+                  {hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}`}
                 </option>
               ))}
             </select>
