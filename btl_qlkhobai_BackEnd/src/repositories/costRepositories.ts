@@ -20,10 +20,11 @@ export const createCost = async (data: any) => {
     .input("LoaiChiPhi", data.LoaiChiPhi)
     .input("SoTien", data.SoTien)
     .input("ThuKhachHang", data.ThuKhachHang)
+    .input("NgayChi", data.NgayChi ? new Date(data.NgayChi) : new Date())
     .query(`
       INSERT INTO ChiPhi 
-      (HopDongID, ContainerID, LoaiChiPhi, SoTien, ThuKhachHang)
-      VALUES (@HopDongID, @ContainerID, @LoaiChiPhi, @SoTien, @ThuKhachHang)
+      (HopDongID, ContainerID, LoaiChiPhi, SoTien, ThuKhachHang, NgayChi)
+      VALUES (@HopDongID, @ContainerID, @LoaiChiPhi, @SoTien, @ThuKhachHang, @NgayChi)
 
       -- Đồng bộ vào Hóa đơn
       IF @HopDongID IS NOT NULL AND @ThuKhachHang = N'Có'
@@ -45,6 +46,7 @@ export const updateCostById = async (id: number, data: any) => {
     .input("LoaiChiPhi", data.LoaiChiPhi)
     .input("NewSoTien", data.SoTien)
     .input("ThuKhachHang", data.ThuKhachHang)
+    .input("NgayChi", data.NgayChi ? new Date(data.NgayChi) : new Date())
     .query(`
       DECLARE @OldHopDongID INT;
       DECLARE @OldSoTien DECIMAL(15,2);
@@ -65,7 +67,8 @@ export const updateCostById = async (id: number, data: any) => {
         ContainerID = @ContainerID,
         LoaiChiPhi = @LoaiChiPhi,
         SoTien = @NewSoTien,
-        ThuKhachHang = @ThuKhachHang
+        ThuKhachHang = @ThuKhachHang,
+        NgayChi = @NgayChi
       WHERE ChiPhiID = @ChiPhiID;
 
       -- Cộng khoản mới

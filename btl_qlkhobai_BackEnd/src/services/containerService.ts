@@ -14,7 +14,7 @@ export const fetchContainer = async () => {
   return await getAllContainer();
 };
 
-import { createHistory } from "../repositories/containerHistoryRepository";
+import { createHistory, deleteHistoryByContainerId } from "../repositories/containerHistoryRepository";
 
 export const createContainerService = async (data: any) => {
   const result = await createContainer(data);
@@ -119,6 +119,8 @@ export const deleteContainerService = async (id: number) => {
       await updateWarehouseById(container.KhoID, { ...targetWarehouse, SoLuongContainer: Math.max(0, (targetWarehouse.SoLuongContainer || 0) - 1) });
     }
   }
+  // Delete history first to avoid FK constraint
+  await deleteHistoryByContainerId(id);
   return await deleteContainer(id);
 };
 

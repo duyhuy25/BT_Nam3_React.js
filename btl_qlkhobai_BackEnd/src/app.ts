@@ -13,7 +13,6 @@ import cost from "./routes/costRoutes"
 import invoice from "./routes/invoiceRoutes"
 import user from "./routes/usersRoutes"
 import payment from "./routes/paymentRoutes"
-import roleRoutes from "./routes/roleRoutes"
 
 const app = express();
 
@@ -33,6 +32,5 @@ app.use("/api/cost", cost);
 app.use("/api/invoice", invoice);
 app.use("/api/user", user);
 app.use("/api/payment", payment);
-app.use("/api/role", roleRoutes);
 
 export default app;

@@ -56,6 +56,14 @@ export const deleteHistory = async (id: number) => {
     .query("DELETE FROM LichSuContainer WHERE LichSuID = @LichSuID");
 };
 
+export const deleteHistoryByContainerId = async (containerId: number) => {
+  const pool = await poolPromise;
+
+  await pool.request()
+    .input("ContainerID", sql.Int, containerId)
+    .query("DELETE FROM LichSuContainer WHERE ContainerID = @ContainerID");
+};
+
 export const searchHistory = async (searchTerm = "") => {
   const pool = await poolPromise;
   const request = pool.request();

@@ -262,9 +262,15 @@ const Containers: React.FC = () => {
     if (!window.confirm("Xóa container này?")) return;
     try {
       const res = await fetch(`http://localhost:5000/api/container/container/${id}`, { method: "DELETE" });
-      if (res.ok) fetchContainers(search);
+      if (res.ok) {
+        fetchContainers(search);
+      } else {
+        const errorData = await res.json();
+        alert("Lỗi khi xóa container: " + (errorData.message || "Không rõ nguyên nhân"));
+      }
     } catch (err) {
       console.error("Delete error:", err);
+      alert("Lỗi kết nối server khi xóa");
     }
   };
 

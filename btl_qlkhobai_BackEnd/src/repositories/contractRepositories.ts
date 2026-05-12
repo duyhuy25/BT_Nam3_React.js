@@ -3,7 +3,7 @@ import sql from "mssql";
 
 export const getAllContract = async () => {
   const pool = await poolPromise;
-  const result = await pool.request().query("SELECT * FROM HopDong");
+  const result = await pool.request().query("SELECT * FROM HopDong ORDER BY HopDongID DESC");
   return result.recordset;
 };
 

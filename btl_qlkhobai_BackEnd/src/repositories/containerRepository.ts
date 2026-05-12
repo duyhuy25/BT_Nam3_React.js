@@ -6,7 +6,7 @@ export const getAllContainer = async () => {
 
   const result = await pool
     .request()
-    .query("SELECT * FROM Container");
+    .query("SELECT * FROM Container ORDER BY ContainerID DESC");
   return result.recordset;
 };
 

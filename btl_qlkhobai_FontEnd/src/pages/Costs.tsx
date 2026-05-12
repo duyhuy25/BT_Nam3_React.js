@@ -8,6 +8,7 @@ interface Cost {
   LoaiChiPhi: string;
   SoTien: number;
   ThuKhachHang: string;
+  NgayChi: string;
 }
 
 interface HopDongOption {
@@ -34,6 +35,7 @@ const Costs: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<Cost | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     HopDongID: "",
@@ -41,6 +43,7 @@ const Costs: React.FC = () => {
     LoaiChiPhi: "",
     SoTien: "",
     ThuKhachHang: "Không",
+    NgayChi: new Date().toISOString().split("T")[0],
   });
 
   const fetchCosts = useCallback(async (searchTerm: string = "") => {
@@ -124,7 +127,7 @@ const Costs: React.FC = () => {
       setForm({
         ...form,
         [name]: value,
-        ContainerID: "" // Reset container if contract changes
+        ContainerID: "" 
       });
       return;
     }
@@ -144,6 +147,7 @@ const Costs: React.FC = () => {
       LoaiChiPhi: "",
       SoTien: "",
       ThuKhachHang: "Không",
+      NgayChi: new Date().toISOString().split("T")[0],
     });
     setShowForm(true);
   };
@@ -157,6 +161,7 @@ const Costs: React.FC = () => {
       LoaiChiPhi: item.LoaiChiPhi,
       SoTien: item.SoTien.toString(),
       ThuKhachHang: item.ThuKhachHang,
+      NgayChi: item.NgayChi ? new Date(item.NgayChi).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     });
     setShowForm(true);
   };
@@ -225,18 +230,27 @@ const Costs: React.FC = () => {
     }
   };
 
-  {loading && <div className="loading">Đang tải dữ liệu...</div>}
-  {error && <div className="error">Lỗi: {error}</div>}
+  const groupedCosts = React.useMemo(() => {
+    const groups: Record<number, Cost[]> = {};
+    costs.forEach((c) => {
+      if (!groups[c.HopDongID]) groups[c.HopDongID] = [];
+      groups[c.HopDongID].push(c);
+    });
+    return Object.entries(groups).sort((a, b) => Number(b[0]) - Number(a[0]));
+  }, [costs]);
 
   return (
-    <div>
+    <div className="container-page">
+      {loading && <div className="loading">Đang tải dữ liệu...</div>}
+      {error && <div className="error">Lỗi: {error}</div>}
+      
       <div className="header">
-        <h2>💰 Danh sách chi phí</h2>
+        <h2>💰 Quản lý chi phí theo Hợp đồng</h2>
 
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm chi phí..."
+            placeholder="🔍 Tìm chi phí, hợp đồng..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -251,56 +265,83 @@ const Costs: React.FC = () => {
       <table>
         <thead>
           <tr>
-            <th>ID</th>
             <th>Hợp đồng</th>
-            <th>Container</th>
-            <th>Loại chi phí</th>
-            <th>Số tiền</th>
-            <th>Thu KH</th>
-            <th>Tác vụ</th>
+            <th>Số lượng khoản chi</th>
+            <th>Tổng tiền</th>
+            <th>Cập nhật cuối</th>
           </tr>
         </thead>
 
         <tbody>
-          {costs.map((c) => {
-            const hd = hopDongMap[c.HopDongID];
-            const ct = containerMap[c.ContainerID || 0];
+          {groupedCosts.map(([hopDongIdStr, group]) => {
+            const hopDongId = Number(hopDongIdStr);
+            const hd = hopDongMap[hopDongId];
+            const isExpanded = expandedRowId === hopDongId;
+            const totalAmount = group.reduce((sum, c) => sum + c.SoTien, 0);
+            const latestDate = group.reduce((max, c) => {
+              const d = new Date(c.NgayChi).getTime();
+              return d > max ? d : max;
+            }, 0);
 
             return (
-              <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
-                <td>{formatID(c.ChiPhiID)}</td>
-                <td>
-                  {hd
-                    ? hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}`
-                    : `HD${c.HopDongID.toString().padStart(3, "0")}`}
-                </td>
-                <td>{ct ? ct.formattedID : "-"}</td>
-                <td>{c.LoaiChiPhi}</td>
-                <td>{c.SoTien.toLocaleString("vi-VN")}</td>
-                <td>{c.ThuKhachHang}</td>
-
-                <td>
-                  <button
-                    className="btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(c);
-                    }}
-                  >
-                    Sửa
-                  </button>
-
-                  <button
-                    className="btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c.ChiPhiID);
-                    }}
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
+              <React.Fragment key={`group-${hopDongId}`}>
+                <tr 
+                  onClick={() => setExpandedRowId(isExpanded ? null : hopDongId)}
+                  style={{ cursor: "pointer", background: isExpanded ? "#f0f8ff" : "inherit" }}
+                >
+                  <td>
+                    <span style={{ marginRight: 8, fontSize: 12, color: '#666' }}>{isExpanded ? '▼' : '▶'}</span>
+                    {hd ? hd.MaHopDong || `HD${hd.HopDongID.toString().padStart(3, "0")}` : `HD${hopDongId.toString().padStart(3, "0")}`}
+                  </td>
+                  <td>{group.length} khoản</td>
+                  <td style={{ fontWeight: "bold", color: "#2c3e50" }}>{totalAmount.toLocaleString("vi-VN")} VNĐ</td>
+                  <td>{latestDate > 0 ? new Date(latestDate).toLocaleDateString("vi-VN") : "-"}</td>
+                </tr>
+                {isExpanded && (
+                  <tr className="expanded-row" style={{ backgroundColor: "#f9f9f9" }}>
+                    <td colSpan={4} style={{ padding: 0 }}>
+                      <div style={{ padding: "15px", borderBottom: "1px solid #ddd" }}>
+                        <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>📋 Chi tiết chi phí: {hd?.MaHopDong || `HD${hopDongId.toString().padStart(3, "0")}`}</h4>
+                        <table style={{ background: "#fff", border: "1px solid #ccc", marginBottom: 0 }}>
+                          <thead>
+                            <tr style={{ background: "#eef2f5" }}>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc", width: "60px", textAlign: 'center' }}>STT</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Mã CP</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Loại chi phí</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Số tiền</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Container</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Ngày chi</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc" }}>Thu KH</th>
+                              <th style={{ padding: "8px", borderBottom: "1px solid #ccc", width: "120px" }}>Tác vụ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.map((c, i) => (
+                              <tr key={c.ChiPhiID} style={{ borderBottom: "1px solid #eee" }}>
+                                <td style={{ padding: "8px", textAlign: 'center', fontWeight: 'bold' }}>{i + 1}</td>
+                                <td style={{ padding: "8px" }}>{formatID(c.ChiPhiID)}</td>
+                                <td style={{ padding: "8px" }}>{c.LoaiChiPhi}</td>
+                                <td style={{ padding: "8px", fontWeight: "600" }}>{c.SoTien.toLocaleString("vi-VN")}</td>
+                                <td style={{ padding: "8px" }}>{containerMap[c.ContainerID || 0]?.formattedID || "-"}</td>
+                                <td style={{ padding: "8px" }}>{c.NgayChi ? new Date(c.NgayChi).toLocaleDateString("vi-VN") : "-"}</td>
+                                <td style={{ padding: "8px" }}>
+                                  <span className={`badge ${c.ThuKhachHang === 'Có' ? 'success' : 'warning'}`}>
+                                    {c.ThuKhachHang}
+                                  </span>
+                                </td>
+                                <td style={{ padding: "8px" }}>
+                                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
+                                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.ChiPhiID); }}>Xóa</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             );
           })}
         </tbody>
@@ -355,6 +396,14 @@ const Costs: React.FC = () => {
               type="number"
               name="SoTien"
               value={form.SoTien}
+              onChange={handleChange}
+            />
+
+            <label>Ngày chi *</label>
+            <input
+              type="date"
+              name="NgayChi"
+              value={form.NgayChi}
               onChange={handleChange}
             />
 

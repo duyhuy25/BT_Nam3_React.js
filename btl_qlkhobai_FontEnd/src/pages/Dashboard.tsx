@@ -11,12 +11,18 @@ interface Invoice {
 interface Cost {
   ChiPhiID: number;
   SoTien: number;
+  ThuKhachHang: string;
+  NgayChi: string;
 }
 
 const Dashboard: React.FC = () => {
 
   const [tongDoanhThu, setTongDoanhThu] = useState(0);
   const [tongChiPhi, setTongChiPhi] = useState(0);
+  const [chiPhiThuKH, setChiPhiThuKH] = useState(0);
+  const [chiPhiNoiBo, setChiPhiNoiBo] = useState(0);
+  const [doanhThuHomNay, setDoanhThuHomNay] = useState(0);
+  const [chiPhiHomNay, setChiPhiHomNay] = useState(0);
 
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
@@ -27,54 +33,79 @@ const Dashboard: React.FC = () => {
 
     const fetchData = async () => {
 
-      const invoices: Invoice[] = await fetch("http://localhost:5000/api/invoice/invoice")
-        .then(res => res.json());
+      try {
+        const invoices: Invoice[] = await fetch("http://localhost:5000/api/invoice/invoice")
+          .then(res => res.json());
 
-      const costs: Cost[] = await fetch("http://localhost:5000/api/cost/cost")
-        .then(res => res.json());
+        const costs: Cost[] = await fetch("http://localhost:5000/api/cost/cost")
+          .then(res => res.json());
 
-      const totalRevenue = invoices.reduce((sum, i) => sum + i.SoTien, 0);
-      const totalCost = costs.reduce((sum, c) => sum + c.SoTien, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      setTongDoanhThu(totalRevenue);
-      setTongChiPhi(totalCost);
+        const totalRevenue = invoices.reduce((sum, i) => sum + i.SoTien, 0);
+        const totalCost = costs.reduce((sum, c) => sum + c.SoTien, 0);
+        
+        const billedCost = costs.filter(c => c.ThuKhachHang === "Có").reduce((sum, c) => sum + c.SoTien, 0);
+        const internalCost = costs.filter(c => c.ThuKhachHang !== "Có").reduce((sum, c) => sum + c.SoTien, 0);
 
-      const monthMap: any = {};
-      const yearMap: any = {};
+        const revenueToday = invoices.filter(i => {
+          const d = new Date(i.NgayLap);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime() === today.getTime();
+        }).reduce((sum, i) => sum + i.SoTien, 0);
 
-      invoices.forEach(i => {
-        const date = new Date(i.NgayLap);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
+        const costToday = costs.filter(c => {
+          if (!c.NgayChi) return false;
+          const d = new Date(c.NgayChi);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime() === today.getTime();
+        }).reduce((sum, c) => sum + c.SoTien, 0);
 
-        const monthKey = `${year}-${month}`;
+        setTongDoanhThu(totalRevenue);
+        setTongChiPhi(totalCost);
+        setChiPhiThuKH(billedCost);
+        setChiPhiNoiBo(internalCost);
+        setDoanhThuHomNay(revenueToday);
+        setChiPhiHomNay(costToday);
 
-        if (!monthMap[monthKey]) monthMap[monthKey] = 0;
-        if (!yearMap[year]) yearMap[year] = 0;
+        const monthMap: any = {};
+        const yearMap: any = {};
 
-        monthMap[monthKey] += i.SoTien;
-        yearMap[year] += i.SoTien;
-      });
+        invoices.forEach(i => {
+          const date = new Date(i.NgayLap);
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1;
 
-      const monthArr = Object.keys(monthMap).map(k => ({
-        thang: k,
-        doanhThu: monthMap[k]
-      }));
+          const monthKey = `${year}-${month}`;
 
-      const yearArr = Object.keys(yearMap).map(k => ({
-        nam: k,
-        doanhThu: yearMap[k]
-      }));
+          if (!monthMap[monthKey]) monthMap[monthKey] = 0;
+          if (!yearMap[year]) yearMap[year] = 0;
 
-      setMonthlyData(monthArr);
-      setYearlyData(yearArr);
+          monthMap[monthKey] += i.SoTien;
+          yearMap[year] += i.SoTien;
+        });
+
+        const monthArr = Object.keys(monthMap).map(k => ({
+          thang: k,
+          doanhThu: monthMap[k]
+        }));
+
+        const yearArr = Object.keys(yearMap).map(k => ({
+          nam: k,
+          doanhThu: yearMap[k]
+        }));
+
+        setMonthlyData(monthArr);
+        setYearlyData(yearArr);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
     };
 
     fetchData();
 
   }, []);
-
-  const loiNhuan = tongDoanhThu - tongChiPhi;
 
   const filteredMonth = monthlyData.filter(m =>
     yearFilter === "all" ? true : m.thang.startsWith(yearFilter)
@@ -100,10 +131,27 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="card">
-          <h4>📈 Lợi nhuận</h4>
-          <p>{loiNhuan.toLocaleString()} VNĐ</p>
+          <h4>📥 Chi phí thu khách</h4>
+          <p>{chiPhiThuKH.toLocaleString()} VNĐ</p>
         </div>
 
+        <div className="card">
+          <h4>🏢 Chi phí nội bộ</h4>
+          <p>{chiPhiNoiBo.toLocaleString()} VNĐ</p>
+        </div>
+
+      </div>
+
+      <h3 style={{ marginTop: "30px" }}>🕒 Thống kê hôm nay</h3>
+      <div className="dashboard">
+        <div className="card today-card revenue">
+          <h4>💵 Doanh thu hôm nay</h4>
+          <p>{doanhThuHomNay.toLocaleString()} VNĐ</p>
+        </div>
+        <div className="card today-card cost">
+          <h4>📉 Chi phí hôm nay</h4>
+          <p>{chiPhiHomNay.toLocaleString()} VNĐ</p>
+        </div>
       </div>
 
       <div style={{ margin: "20px 0" }}>
