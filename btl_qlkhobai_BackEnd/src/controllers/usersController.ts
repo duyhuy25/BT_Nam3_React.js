@@ -24,7 +24,7 @@ export const addUser = async (req: Request, res: Response) => {
     res.status(201).json({ message: "Thêm user thành công" });
   } catch (error: any) {
     console.error("Error adding user:", error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(400).json({ message: error.message || "Lỗi server" });
   }
 };
 

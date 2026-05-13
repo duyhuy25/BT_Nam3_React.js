@@ -18,10 +18,29 @@ import Costs from "./pages/Costs";
 import Invoices from "./pages/Invoices";
 import Users from "./pages/Users";
 import Dashboard from "./pages/Dashboard";
+import AuthPage from "./pages/AuthPage";
 
 function App() {
+  const [user, setUser] = useState<any>(() => {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const [module, setModule] = useState<string>("containers");
+  const [module, setModule] = useState<string>("dashboard");
+
+  const handleLoginSuccess = (userData: any) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
+
+  if (!user) {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const renderModule = () => {
     switch (module) {
@@ -62,7 +81,7 @@ function App() {
   return (
     <div className="app">
   
-      <Header />
+      <Header user={user} onLogout={handleLogout} />
   
       <div className="container">
   

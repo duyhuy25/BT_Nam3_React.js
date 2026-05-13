@@ -48,8 +48,6 @@ const Costs: React.FC = () => {
 
   const fetchCosts = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/cost/cost/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/cost/cost";
@@ -62,8 +60,6 @@ const Costs: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Không thể tải chi phí");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -95,9 +91,12 @@ const Costs: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchCosts();
-    fetchHopDongs();
-    fetchContainers();
+    setLoading(true);
+    Promise.all([
+      fetchCosts(),
+      fetchHopDongs(),
+      fetchContainers()
+    ]).finally(() => setLoading(false));
   }, [fetchCosts, fetchHopDongs, fetchContainers]);
 
   useEffect(() => {
@@ -236,7 +235,8 @@ const Costs: React.FC = () => {
       if (!groups[c.HopDongID]) groups[c.HopDongID] = [];
       groups[c.HopDongID].push(c);
     });
-    return Object.entries(groups).sort((a, b) => Number(b[0]) - Number(a[0]));
+    const sorted = Object.entries(groups).sort((a, b) => Number(b[0]) - Number(a[0]));
+    return sorted;
   }, [costs]);
 
   return (
@@ -245,7 +245,7 @@ const Costs: React.FC = () => {
       {error && <div className="error">Lỗi: {error}</div>}
       
       <div className="header">
-        <h2>💰 Quản lý chi phí theo Hợp đồng</h2>
+        <h2>💰 Quản lý chi phí</h2>
 
         <div className="toolbar">
           <input

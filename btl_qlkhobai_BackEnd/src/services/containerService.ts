@@ -4,23 +4,39 @@ import {
   updateContainer,
   deleteContainer,
   searchContainer,
-  getContainerById,          
+  getContainerById,
 } from "../repositories/containerRepository";
-import { updateWarehouseById, getAllWarehouse } from "../repositories/warehousesRepository";
-import { getAllTrip, updateTripById } from "../repositories/tripsRepositories";
-import { getVehicleById, updateVehicleById } from "../repositories/vehicleRepositories";
+
+import {
+  updateWarehouseById,
+  getAllWarehouse
+} from "../repositories/warehousesRepository";
+
+import {
+  getAllTrip,
+  updateTripById
+} from "../repositories/tripsRepositories";
+
+import {
+  getVehicleById,
+  updateVehicleById
+} from "../repositories/vehicleRepositories";
 
 export const fetchContainer = async () => {
   return await getAllContainer();
 };
 
-import { createHistory, deleteHistoryByContainerId } from "../repositories/containerHistoryRepository";
+import {
+  createHistory,
+  deleteHistoryByContainerId
+} from "../repositories/containerHistoryRepository";
 
 export const createContainerService = async (data: any) => {
   const result = await createContainer(data);
+
   if (result.recordset && result.recordset.length > 0) {
     const newContainerID = result.recordset[0].ContainerID;
-    
+
     await createHistory({
       ContainerID: newContainerID,
       ThoiGian: new Date(),
@@ -28,13 +44,13 @@ export const createContainerService = async (data: any) => {
       ViTri: 'Kho khởi tạo'
     });
   }
+
   return result;
 };
 
 export const updateContainerService = async (id: number, data: any) => {
   const oldContainer = await getContainerById(id);
-  
-  // Status activity mapping for history
+
   const statusToActivity: Record<string, string> = {
     'Rỗng': 'Tạo',
     'Đang đóng hàng': 'Đóng hàng',
@@ -55,56 +71,135 @@ export const updateContainerService = async (id: number, data: any) => {
     ViTri: 'Hệ thống'
   });
 
-  // Business Logic Side Effects
-  
-  // 1. Warehouse count management
-  if (oldContainer && oldContainer.TrangThai !== 'Trong kho' && data.TrangThai === 'Trong kho' && data.KhoID) {
+
+  if (
+    oldContainer &&
+    oldContainer.TrangThai !== 'Trong kho' &&
+    data.TrangThai === 'Trong kho' &&
+    data.KhoID
+  ) {
     const warehouses = await getAllWarehouse();
-    const targetWarehouse = warehouses.find((w: any) => w.KhoID === data.KhoID);
+
+    const targetWarehouse = warehouses.find(
+      (w: any) => w.KhoID === data.KhoID
+    );
+
     if (targetWarehouse) {
-      await updateWarehouseById(data.KhoID, { ...targetWarehouse, SoLuongContainer: (targetWarehouse.SoLuongContainer || 0) + 1 });
+      await updateWarehouseById(data.KhoID, {
+        ...targetWarehouse,
+        SoLuongContainer:
+          (targetWarehouse.SoLuongContainer || 0) + 1
+      });
     }
-  } else if (oldContainer && oldContainer.TrangThai === 'Trong kho' && data.TrangThai !== 'Trong kho' && oldContainer.KhoID) {
+
+  } else if (
+    oldContainer &&
+    oldContainer.TrangThai === 'Trong kho' &&
+    data.TrangThai !== 'Trong kho' &&
+    oldContainer.KhoID
+  ) {
     const warehouses = await getAllWarehouse();
-    const targetWarehouse = warehouses.find((w: any) => w.KhoID === oldContainer.KhoID);
+
+    const targetWarehouse = warehouses.find(
+      (w: any) => w.KhoID === oldContainer.KhoID
+    );
+
     if (targetWarehouse) {
-      await updateWarehouseById(oldContainer.KhoID, { ...targetWarehouse, SoLuongContainer: Math.max(0, (targetWarehouse.SoLuongContainer || 0) - 1) });
+      await updateWarehouseById(oldContainer.KhoID, {
+        ...targetWarehouse,
+        SoLuongContainer: Math.max(
+          0,
+          (targetWarehouse.SoLuongContainer || 0) - 1
+        )
+      });
     }
   }
 
-  // 2. Trip status management
   if (data.TrangThai === 'Đã phân công' && data.PhuongTienID) {
     const trips = await getAllTrip();
-    // Find a trip that is in 'Chuẩn bị' status and matches the vehicle
-    const targetTrip = trips.find((t: any) => t.PhuongTienID === data.PhuongTienID && t.TrangThai === 'Chuẩn bị');
+
+    // Tìm chuyến đi có trạng thái 'Chuẩn bị'
+    // và thuộc đúng phương tiện
+    const targetTrip = trips.find(
+      (t: any) =>
+        t.PhuongTienID === data.PhuongTienID &&
+        t.TrangThai === 'Chuẩn bị'
+    );
+
     if (targetTrip) {
-      await updateTripById(targetTrip.ChuyenDiID, { ...targetTrip, TrangThai: 'Đã phân công' });
-    }
-  } else if (data.TrangThai === 'Đang vận chuyển' && data.PhuongTienID) {
-    const trips = await getAllTrip();
-    const targetTrip = trips.find((t: any) => t.PhuongTienID === data.PhuongTienID && t.TrangThai === 'Đã phân công');
-    if (targetTrip) {
-      await updateTripById(targetTrip.ChuyenDiID, { ...targetTrip, TrangThai: 'Đang chạy' });
-    }
-    
-    // Also update Vehicle status
-    const vehicle = await getVehicleById(data.PhuongTienID);
-    if (vehicle && vehicle.TrangThai !== 'Đang chạy') {
-      await updateVehicleById(data.PhuongTienID, { ...vehicle, TrangThai: 'Đang chạy' });
-    }
-  } else if (data.TrangThai === 'Đã giao' && data.PhuongTienID) {
-    const trips = await getAllTrip();
-    // Find the active trip for this vehicle
-    const targetTrip = trips.find((t: any) => t.PhuongTienID === data.PhuongTienID && t.TrangThai === 'Đang chạy');
-    if (targetTrip) {
-      await updateTripById(targetTrip.ChuyenDiID, { ...targetTrip, TrangThai: 'Hoàn thành' });
+      await updateTripById(targetTrip.ChuyenDiID, {
+        ...targetTrip,
+        TrangThai: 'Đã phân công'
+      });
     }
 
-    // Reset Vehicle to 'Sẵn sàng'
-    const vehicle = await getVehicleById(data.PhuongTienID);
-    if (vehicle) {
-      await updateVehicleById(data.PhuongTienID, { ...vehicle, TrangThai: 'Sẵn sàng' });
+  } else if (
+    data.TrangThai === 'Đang vận chuyển' &&
+    data.PhuongTienID
+  ) {
+    const trips = await getAllTrip();
+
+    const targetTrip = trips.find(
+      (t: any) =>
+        t.PhuongTienID === data.PhuongTienID &&
+        t.TrangThai === 'Đã phân công'
+    );
+
+    if (targetTrip) {
+      await updateTripById(targetTrip.ChuyenDiID, {
+        ...targetTrip,
+        TrangThai: 'Đang chạy'
+      });
     }
+
+    // Đồng thời cập nhật trạng thái phương tiện
+    const vehicle = await getVehicleById(data.PhuongTienID);
+
+    if (vehicle && vehicle.TrangThai !== 'Đang chạy') {
+      await updateVehicleById(data.PhuongTienID, {
+        ...vehicle,
+        TrangThai: 'Đang chạy'
+      });
+    }
+
+  } else if (
+    data.TrangThai === 'Đã giao' &&
+    data.PhuongTienID
+  ) {
+    const trips = await getAllTrip();
+
+    // Tìm chuyến đi đang hoạt động của phương tiện
+    const targetTrip = trips.find(
+      (t: any) =>
+        t.PhuongTienID === data.PhuongTienID &&
+        t.TrangThai === 'Đang chạy'
+    );
+
+    if (targetTrip) {
+      // Đưa chuyến đi về trạng thái 'Chuẩn bị'
+      // để tái sử dụng cho lần tiếp theo
+      await updateTripById(targetTrip.ChuyenDiID, {
+        ...targetTrip,
+        TrangThai: 'Chuẩn bị'
+      });
+    }
+
+    // Đặt lại trạng thái phương tiện thành 'Sẵn sàng'
+    const vehicle = await getVehicleById(data.PhuongTienID);
+
+    if (vehicle) {
+      await updateVehicleById(data.PhuongTienID, {
+        ...vehicle,
+        TrangThai: 'Sẵn sàng'
+      });
+    }
+
+    // Đặt lại container về trạng thái 'Rỗng'
+    // và xóa liên kết với phương tiện / kho
+    // để chuẩn bị cho lần sử dụng tiếp theo
+    data.TrangThai = 'Rỗng';
+    data.PhuongTienID = null;
+    data.KhoID = null;
   }
 
   return await updateContainer(id, data);
@@ -112,18 +207,39 @@ export const updateContainerService = async (id: number, data: any) => {
 
 export const deleteContainerService = async (id: number) => {
   const container = await getContainerById(id);
-  if (container && container.TrangThai === 'Trong kho' && container.KhoID) {
+
+  // Nếu container đang nằm trong kho
+  // thì giảm số lượng container của kho tương ứng
+  if (
+    container &&
+    container.TrangThai === 'Trong kho' &&
+    container.KhoID
+  ) {
     const warehouses = await getAllWarehouse();
-    const targetWarehouse = warehouses.find((w: any) => w.KhoID === container.KhoID);
+
+    const targetWarehouse = warehouses.find(
+      (w: any) => w.KhoID === container.KhoID
+    );
+
     if (targetWarehouse) {
-      await updateWarehouseById(container.KhoID, { ...targetWarehouse, SoLuongContainer: Math.max(0, (targetWarehouse.SoLuongContainer || 0) - 1) });
+      await updateWarehouseById(container.KhoID, {
+        ...targetWarehouse,
+        SoLuongContainer: Math.max(
+          0,
+          (targetWarehouse.SoLuongContainer || 0) - 1
+        )
+      });
     }
   }
-  // Delete history first to avoid FK constraint
+
+  // Xóa lịch sử trước để tránh lỗi khóa ngoại (FK constraint)
   await deleteHistoryByContainerId(id);
+
   return await deleteContainer(id);
 };
 
-export const searchContainersService = async (searchTerm: string = "") => {
+export const searchContainersService = async (
+  searchTerm: string = ""
+) => {
   return await searchContainer(searchTerm);
 };

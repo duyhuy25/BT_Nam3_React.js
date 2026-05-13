@@ -43,13 +43,11 @@ const Trips: React.FC = () => {
     NgayKhoiHanh: "",
     NgayDuKienDen: "",
     PhuongTienID: "",
-    TrangThai: ""
+    TrangThai: "Chuẩn bị"
   });
-  
+
   const fetchTrips = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/trip/trip/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/trip/trip";
@@ -61,26 +59,19 @@ const Trips: React.FC = () => {
       setTrips(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTrips();
-    
-    // Fetch Ports
-    fetch("http://localhost:5000/api/port/port")
-      .then(res => res.json())
-      .then(data => setPorts(data))
-      .catch(err => console.error("Error fetching ports:", err));
-
-    // Fetch Vehicles
-    fetch("http://localhost:5000/api/vehicle/vehicle")
-      .then(res => res.json())
-      .then(data => setVehicles(data))
-      .catch(err => console.error("Error fetching vehicles:", err));
-  }, [fetchTrips]);
+    setLoading(true);
+    Promise.all([
+      fetch("http://localhost:5000/api/port/port").then(res => res.json()),
+      fetch("http://localhost:5000/api/vehicle/vehicle").then(res => res.json())
+    ]).then(([p, v]) => {
+      setPorts(p);
+      setVehicles(v);
+    }).finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -113,7 +104,7 @@ const Trips: React.FC = () => {
       NgayKhoiHanh: "",
       NgayDuKienDen: "",
       PhuongTienID: "",
-      TrangThai: ""
+      TrangThai: "Chuẩn bị"
     });
 
     setShowForm(true);
@@ -157,6 +148,9 @@ const Trips: React.FC = () => {
         });
       }
 
+      if (isEdit && selected && form.TrangThai === "Hoàn thành") {
+        alert("Chuyến đi đã hoàn thành và phương tiện đã được giải phóng (Trạng thái chuyến trả về Chuẩn bị)");
+      }
       setShowForm(false);
       fetchTrips(search);
     } catch (err) {
@@ -175,7 +169,7 @@ const Trips: React.FC = () => {
     fetchTrips(search);
   };
 
-  {loading && <div className="loading">Đang tải...</div>}
+  { loading && <div className="loading">Đang tải...</div> }
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
@@ -273,7 +267,7 @@ const Trips: React.FC = () => {
 
             <label>ETD (Ngày khởi hành)</label>
             <input type="date" name="NgayKhoiHanh" value={form.NgayKhoiHanh} onChange={handleChange} />
-            
+
             <label>ETA (Ngày dự kiến đến)</label>
             <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
 

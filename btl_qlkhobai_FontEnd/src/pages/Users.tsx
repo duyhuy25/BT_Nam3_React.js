@@ -32,12 +32,10 @@ const Users: React.FC = () => {
     RoleID: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [visibleUserIds, setVisibleUserIds] = useState<Set<number>>(new Set());
 
   const fetchUsers = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/user/user/search?search=${encodeURIComponent(searchTerm)}`
         : `http://localhost:5000/api/user/user`;
@@ -49,14 +47,13 @@ const Users: React.FC = () => {
       setUsers(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
 
   useEffect(() => {
-    fetchUsers();
+    setLoading(true);
+    fetchUsers().finally(() => setLoading(false));
   }, [fetchUsers]);
 
   useEffect(() => {
@@ -87,7 +84,7 @@ const Users: React.FC = () => {
       TrangThai: "Hoạt động",
       RoleID: "1",
     });
-    setShowPassword(false);
+
     setShowForm(true);
   };
 
@@ -103,7 +100,7 @@ const Users: React.FC = () => {
       TrangThai: item.TrangThai || "Hoạt động",
       RoleID: (item.RoleID ?? 1).toString(),
     });
-    setShowPassword(false);
+
     setShowForm(true);
   };
 
@@ -173,6 +170,18 @@ const Users: React.FC = () => {
     }
   };
 
+  const togglePasswordVisibility = (userId: number) => {
+    setVisibleUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+
   const maskPassword = (password: string): string => password ? "*".repeat(8) : "Chưa có";
 
   if (error) return <div className="error">Lỗi: {error}</div>;
@@ -217,7 +226,24 @@ const Users: React.FC = () => {
             <tr key={u.UserID} onClick={() => handleOpenEdit(u)}>
               <td>{formatID(u.UserID)}</td>
               <td>{u.Username}</td>
-              <td className="password-cell">{maskPassword(u.PasswordHash)}</td>
+              <td className="password-cell">
+                <div className="password-display">
+                  <span>
+                    {visibleUserIds.has(u.UserID) 
+                      ? (u.PasswordHash || "Chưa có") 
+                      : maskPassword(u.PasswordHash)}
+                  </span>
+                  <span 
+                    className="password-toggle-table" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePasswordVisibility(u.UserID);
+                    }}
+                  >
+                    {visibleUserIds.has(u.UserID) ? "🙈" : "👁️"}
+                  </span>
+                </div>
+              </td>
               <td>{u.HoTen}</td>
               <td>{u.Email || "-"}</td>
               <td>{u.TrangThai}</td>
@@ -254,28 +280,13 @@ const Users: React.FC = () => {
               placeholder="Tài khoản" 
             />
 
-            <div style={{ position: 'relative' }}>
-              <input 
-                name="PasswordHash" 
-                type={showPassword ? "text" : "password"}
-                value={form.PasswordHash} 
-                onChange={handleChange} 
-                placeholder={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"} 
-              />
-              <span 
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  cursor: 'pointer',
-                  fontSize: '18px'
-                }}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </span>
-            </div>
+            <input 
+              name="PasswordHash" 
+              type="password"
+              value={form.PasswordHash} 
+              onChange={handleChange} 
+              placeholder={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"} 
+            />
 
             <input name="HoTen" value={form.HoTen} onChange={handleChange} placeholder="Họ tên" />
             <input name="Email" value={form.Email} onChange={handleChange} placeholder="Email" />

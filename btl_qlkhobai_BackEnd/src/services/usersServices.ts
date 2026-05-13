@@ -12,9 +12,16 @@ export const fetchAllUsers = async () => {
 };
 
 export const addUserService = async (data: any) => {
-  if (!data.Username || !data.PasswordHash || !data.RoleID) {
-    throw new Error("Thiếu thông tin bắt buộc: Username, PasswordHash, RoleID");
+  if (!data.Username || !data.PasswordHash || !data.RoleID || !data.HoTen) {
+    throw new Error("Thiếu thông tin bắt buộc: Username, PasswordHash, RoleID, Họ tên");
   }
+
+  // Kiểm tra xem username đã tồn tại chưa
+  const existingUser = await findUserByUsername(data.Username);
+  if (existingUser) {
+    throw new Error("Tài khoản (Username) đã tồn tại trong hệ thống");
+  }
+
   return await createUser(data);
 };
 
@@ -34,6 +41,10 @@ export const searchUsersService = async (keyword: string) => {
 };
 
 export const loginService = async (username: string, password: string) => {
+  if (!username || !password) {
+    throw new Error("Vui lòng nhập đầy đủ tài khoản và mật khẩu");
+  }
+
   const user = await findUserByUsername(username);
   if (!user) {
     throw new Error("Tài khoản không tồn tại");

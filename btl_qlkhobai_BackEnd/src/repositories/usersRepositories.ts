@@ -8,6 +8,7 @@ export const getAllUser = async () => {
     SELECT 
       u.UserID,
       u.Username,
+      u.PasswordHash,
       u.HoTen,
       u.Email,
       u.TrangThai,
@@ -42,23 +43,32 @@ export const updateUserById = async (id: number, data: any) => {
   const pool = await poolPromise;
   const roleId = data.RoleID ? Number(data.RoleID) : 1;  
 
-  await pool.request()
+  let query = `
+    UPDATE Users 
+    SET 
+      Username = @Username,
+      HoTen = @HoTen,
+      Email = @Email,
+      TrangThai = @TrangThai,
+      RoleID = @RoleID
+  `;
+
+  const request = pool.request()
     .input("UserID", sql.Int, id)
     .input("Username", sql.NVarChar(50), data.Username)
     .input("HoTen", sql.NVarChar(100), data.HoTen)
     .input("Email", sql.NVarChar(100), data.Email)
     .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Hoạt động")
-    .input("RoleID", sql.Int, roleId)
-    .query(`
-      UPDATE Users 
-      SET 
-        Username = @Username,
-        HoTen = @HoTen,
-        Email = @Email,
-        TrangThai = @TrangThai,
-        RoleID = @RoleID
-      WHERE UserID = @UserID
-    `);
+    .input("RoleID", sql.Int, roleId);
+
+  if (data.PasswordHash) {
+    query += `, PasswordHash = @PasswordHash`;
+    request.input("PasswordHash", sql.NVarChar(255), data.PasswordHash);
+  }
+
+  query += ` WHERE UserID = @UserID`;
+
+  await request.query(query);
 };
 
 export const deleteUserById = async (id: number) => {
@@ -78,6 +88,7 @@ export const searchUserByKeyword = async (searchTerm: string = "") => {
     SELECT 
       u.UserID,
       u.Username,
+      u.PasswordHash,
       u.HoTen,
       u.Email,
       u.TrangThai,

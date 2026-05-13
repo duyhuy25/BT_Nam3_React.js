@@ -56,9 +56,9 @@ export const searchContainers = async (req: Request, res: Response) => {
     res.json(data);
   } catch (error: any) {
     console.error("=== SEARCH ERROR ===", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Lỗi khi tìm kiếm container",
-      detail: error.message 
+      detail: error.message
     });
   }
 };

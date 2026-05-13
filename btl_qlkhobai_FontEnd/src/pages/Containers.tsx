@@ -32,6 +32,7 @@ const Containers: React.FC = () => {
   const [selectedActionId, setSelectedActionId] = useState<string>("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
 
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,17 +49,17 @@ const Containers: React.FC = () => {
 
   const fetchContainers = useCallback(async (searchTerm: string = "") => {
     try {
-      const url = searchTerm.trim() 
+      const url = searchTerm.trim()
         ? `http://localhost:5000/api/container/container/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/container/container";
-
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Lỗi tải danh sách container");
+      if (!res.ok) throw new Error("Lỗi tải danh sách");
+
       const data = await res.json();
       setContainers(data);
     } catch (err: any) {
-      console.error("Fetch error:", err);
-      setError(err.message);
+      setError(err.message || "Không thể tải dữ liệu");
+      console.error(err);
     }
   }, []);
 
@@ -91,7 +92,7 @@ const Containers: React.FC = () => {
 
   const formatID = (id: number) => "CTN" + id.toString().padStart(3, "0");
   const formatContractID = (id: number) =>
-  "HD" + id.toString().padStart(3, "0");
+    "HD" + id.toString().padStart(3, "0");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -133,10 +134,10 @@ const Containers: React.FC = () => {
     };
 
     try {
-      const url = isEdit && selected 
+      const url = isEdit && selected
         ? `http://localhost:5000/api/container/container/${selected.ContainerID}`
         : "http://localhost:5000/api/container/addcontainer";
-      
+
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,7 +146,7 @@ const Containers: React.FC = () => {
 
       if (res.ok) {
         setShowForm(false);
-        fetchContainers(search); 
+        fetchContainers(search);
       } else {
         alert("Lỗi server khi lưu dữ liệu");
       }
@@ -183,7 +184,7 @@ const Containers: React.FC = () => {
 
       if (res.ok) {
         fetchContainers(search);
-        fetchOptions(); // Refresh warehouse counts
+        fetchOptions();
       } else {
         alert("Lỗi khi cập nhật trạng thái");
       }
@@ -224,7 +225,6 @@ const Containers: React.FC = () => {
     const selectedTrip = trips.find(t => t.ChuyenDiID === Number(selectedActionId));
     if (!selectedTrip) return;
 
-    // Update Trip with selected vehicle if changed
     if (selectedTrip.PhuongTienID !== Number(selectedVehicleId)) {
       try {
         await fetch(`http://localhost:5000/api/trip/trip/${selectedTrip.ChuyenDiID}`, {
@@ -278,20 +278,28 @@ const Containers: React.FC = () => {
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
-    <div>
+    <div className="container-page">
       <div className="header">
         <h2>📦 Quản lý Container</h2>
+
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm kiếm container..."
+            placeholder="🔍 Tìm mã container, trạng thái..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="btn-add" onClick={handleOpenAdd}>+ Thêm container</button>
+
+          <button className="btn-add" onClick={handleOpenAdd}>
+            + Thêm Container
+          </button>
         </div>
       </div>
+
+      {loading && <div className="loading">Đang tải dữ liệu...</div>}
+      {error && <div className="error">Lỗi: {error}</div>}
+
 
       <table>
         <thead>
@@ -318,14 +326,14 @@ const Containers: React.FC = () => {
               <td>{phuongTiens.find(pt => pt.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}</td>
               <td>
                 {
-                  hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong 
+                  hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong
                   || formatContractID(c.HopDongID)
                 }
-              </td>              
+              </td>
               <td style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
                   {c.TrangThai === "Rỗng" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đang đóng hàng")}
                       style={{ background: '#3498db', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -333,7 +341,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Đang đóng hàng" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đã đóng hàng")}
                       style={{ background: '#2980b9', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -341,7 +349,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Đã đóng hàng" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Trong kho")}
                       style={{ background: '#8e44ad', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -349,7 +357,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Trong kho" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đã phân công")}
                       style={{ background: '#f39c12', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -357,7 +365,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Đã phân công" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đang vận chuyển")}
                       style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -365,7 +373,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Đang vận chuyển" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đã đến nơi")}
                       style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -373,7 +381,7 @@ const Containers: React.FC = () => {
                     </button>
                   )}
                   {c.TrangThai === "Đã đến nơi" && (
-                    <button 
+                    <button
                       onClick={() => handleUpdateStatus(c, "Đã giao")}
                       style={{ background: '#2ecc71', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', width: '120px' }}
                     >
@@ -401,7 +409,7 @@ const Containers: React.FC = () => {
         <div className="modal">
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Cập nhật Container" : "➕ Tạo mới Container"}</h3>
-            
+
             <label>Loại hàng *</label>
             <select name="LoaiHangID" value={form.LoaiHangID} onChange={handleChange}>
               <option value="">-- Chọn --</option>
@@ -475,10 +483,10 @@ const Containers: React.FC = () => {
         <div className="modal">
           <div className="modal-content">
             <h3>Phân công chuyến đi & Phương tiện</h3>
-            
+
             <label>1. Chọn chuyến đi (Trạng thái: Chuẩn bị) *</label>
-            <select 
-              value={selectedActionId} 
+            <select
+              value={selectedActionId}
               onChange={(e) => {
                 const tripId = e.target.value;
                 setSelectedActionId(tripId);
@@ -497,8 +505,8 @@ const Containers: React.FC = () => {
             </select>
 
             <label style={{ marginTop: '15px' }}>2. Chọn phương tiện (Chỉ xe Sẵn sàng) *</label>
-            <select 
-              value={selectedVehicleId} 
+            <select
+              value={selectedVehicleId}
               onChange={(e) => setSelectedVehicleId(e.target.value)}
             >
               <option value="">-- Chọn xe --</option>
